@@ -1,0 +1,123 @@
+/* Match RarePepeWorld.com v1 */
+body {
+    text-align: center;
+    background-color: #B2E6FB;
+}
+
+#main-title {
+    text-decoration: none;
+    color: black;
+}
+
+.undecorated, .link-undecorated {
+    text-decoration: none;
+    color: black;
+}
+
+#featured-section-base, #pepe-details-section-base {
+    background-color: #B2E6FB;
+}
+
+#dispensers-section, #order-list-section {
+    background-color: #F6F6F4;
+    min-width: 550px;
+    min-height: 400px;
+}
+
+#pepe-info-section {
+    background-color: #F6F6F4;
+    border: thin solid black;
+    border-top-color: transparent;
+    min-width: 475px;
+}
+
+/* Official Rare Pepe card size 400×560 (Rare Pepe Directory spec) — slot fixed so placeholder matches loaded card */
+.featured-pepe-slot {
+    position: relative;
+    width: 100%;
+    max-width: 350px;
+    margin: 0 auto;
+    padding-bottom: 140%; /* 560/400 = 1.4 */
+    overflow: hidden;
+    border-radius: 25px;
+    background: #e9ecef;
+}
+.featured-pepe-slot img {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    min-width: 0;
+    max-width: none;
+    object-fit: contain;
+    object-position: center;
+    display: block;
+    border-radius: 25px;
+}
+
+.pepe-image {
+    border-radius: 25px;
+    min-width: 350px;
+    max-width: 350px;
+}
+
+.pepe-image-desktop { padding-left: 50px; }
+
+.pepe-details-head, .pepe-details-data { text-align: left; }
+
+#pepe-details-main { min-width: 550px; }
+
+#main-header {
+    background-color: #7FCE65;
+    min-width: 550px;
+}
+
+#footer {
+    background-color: #7FCE65;
+    min-width: 550px;
+}
+
+#copyright { margin-bottom: .5rem; font-weight: 500; line-height: 1; }
+
+#section-search { width: 40%; }
+#search-input { background-color: #F6F6F4; font-weight: bold; }
+
+.sub-data { font-size: 0.75rem; }
+
+* { margin: 0; padding: 0; }
+
+table { width: 100%; border-collapse: collapse; }
+tr:nth-of-type(odd) { background: #eee; }
+th { background: #000; color: white; font-weight: bold; }
+td, th { padding: 6px; border: 1px solid #ccc; }
+
+#address_truncated { font-size: 0.8rem; }
+
+#topTabs li a, #bottomTabs li a {
+    background-color: #ccc;
+    border: thin solid black;
+    color: black;
+}
+#topTabs li a.active, #bottomTabs li a.active {
+    border-bottom-color: transparent;
+    background-color: #F6F6F4;
+}
+
+#xcp-warning { font-size: 0.9em; }
+#xcp-warning a { color: #8CB8CE; }
+#dispensers-heading { color: #A5A5A5; }
+
+@media only screen and (max-width: 760px),
+(min-device-width: 768px) and (max-device-width: 1024px) {
+    .pepe-image {
+        border-radius: 30px;
+        min-width: 450px;
+        margin-left: 20px;
+    }
+    .featured-pepe-slot .pepe-image { min-width: 0; margin-left: 0; }
+    .pepe-image-desktop { padding-left: 0; }
+}
+
+.card-image.rounded { border-radius: 12px; }
+.dispenser-image.rounded { border-radius: 12px; }

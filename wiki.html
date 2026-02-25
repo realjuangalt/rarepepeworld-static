@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=0.65">
+  <title>RARE PEPE WORLD — Wiki</title>
+  <link rel="icon" type="image/png" href="images/RarePepeWorld_logo.png">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.5.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="css/custom.css">
+  <link rel="stylesheet" href="css/style.css">
+  <script src="https://use.fontawesome.com/e33d503066.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked@8.3.0/marked.min.js"></script>
+</head>
+<body class="d-flex flex-column min-vh-100">
+  <header>
+    <div id="header-container" class="container-fluid m-0 p-0">
+      <div id="main-header" class="jumbotron jumbotron-fluid mt-0 pt-0 mb-0 pb-4">
+        <div class="container">
+          <br/>
+          <a id="main-title" href="index.html"><h1 id="main-title-heading"><img height="50" src="images/RarePepeWorld_logo.png" alt="Rare Pepe World"/> RARE PEPE WORLD</h1></a>
+          <p>Trading Bitcoin for frogs since 2016</p>
+          <form action="search.html" method="get" class="d-inline-block">
+            <div class="input-group rounded">
+              <input id="search-input" name="q" type="search" class="form-control rounded" placeholder="Search"/>
+              <div class="input-group-append"><button class="input-group-text border-0" type="submit"><i class="fa fa-search"></i></button></div>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main id="wiki-main" class="container flex-grow-1 py-4">
+    <div id="wiki-loading" class="text-muted">Loading…</div>
+    <div id="wiki-content" class="d-none content-box text-left"></div>
+    <div id="wiki-empty" class="d-none content-box text-left">
+      <p>No wiki page for this card yet. Artists and collectors can add one by creating <code>wiki/<span id="wiki-empty-asset"></span>.md</code> in the repo and opening a pull request.</p>
+      <p><a href="wiki/TEMPLATE.md" target="_blank" rel="noopener">View template</a> · <a href="wiki/README.md" target="_blank" rel="noopener">Wiki README</a></p>
+    </div>
+    <div id="wiki-index" class="d-none">
+      <h2 class="mb-3">Rare Pepe Wiki</h2>
+      <p class="text-muted">One page per card. Content is stored as Markdown in <code>wiki/ASSETNAME.md</code>; artists can submit pull requests to add or edit.</p>
+      <p><a href="wiki/README.md" target="_blank" rel="noopener">How to contribute</a></p>
+      <h3 class="h5 mt-4">All cards (by series)</h3>
+      <div id="wiki-index-list" class="row"></div>
+    </div>
+  </main>
+
+  <footer class="mt-auto">
+    <div id="footer" class="jumbotron jumbotron-fluid m-0 p-1">
+      <p><a href="faq.html" class="link-undecorated">FAQ</a></p>
+      <p id="copyright">&copy;2021 RarePepeWorld.com</p>
+      <p id="rights-reserved">All rights reserved</p>
+    </div>
+  </footer>
+
+  <script src="js/wiki.js"></script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+{
+  "_comment": "Optional overrides when artists report errors. Run build_supply_data.py to merge with API data. Per-asset keys: issued, destroyed, circulating, note. Omit a key to keep API value.",
+  "SOMEASSET": {
+    "issued": "100",
+    "destroyed": "0",
+    "circulating": "100",
+    "note": "Artist confirmed supply cap"
+  }
+}
