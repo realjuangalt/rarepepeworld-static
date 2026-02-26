@@ -160,11 +160,13 @@ static-site/
 
 ## 5. Run locally
 
-Fetching `data/*.json` and TokenScan API from the browser requires a real origin (no `file://`). From the repo root:
+Fetching `data/*.json` and TokenScan API from the browser requires a real origin (no `file://`). **Run the server from the `static-site` directory** so that `archive/pepes/` (card images) is served correctly:
 
 ```bash
 cd static-site
 python -m http.server 8080
 ```
 
-Then open **http://localhost:8080**. For GitHub Pages, push the `static-site/` contents to a branch and enable Pages on that branch (or use a `docs/` or root with the same structure).
+Then open **http://localhost:8080**. If you run the server from the repo root instead, image URLs will point at `/static-site/archive/pepes/...` and may 404 depending on your server; the featured/random pepe images live in `archive/pepes/` and must be served from this folder.
+
+For GitHub Pages, push the `static-site/` contents to a branch and enable Pages on that branch (or use a `docs/` or root with the same structure).

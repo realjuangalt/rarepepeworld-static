@@ -9,7 +9,7 @@
   <link rel="stylesheet" href="css/custom.css">
   <link rel="stylesheet" href="css/style.css">
   <script src="https://use.fontawesome.com/e33d503066.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/marked@8.3.0/marked.min.js"></script>
+  
 </head>
 <body class="d-flex flex-column min-vh-100">
   <header>
@@ -32,6 +32,7 @@
 
   <main id="wiki-main" class="container flex-grow-1 py-4">
     <div id="wiki-loading" class="text-muted">Loading…</div>
+    <div id="wiki-data-bar" class="d-none mb-3 p-2 rounded bg-light small text-muted border"></div>
     <div id="wiki-content" class="d-none content-box text-left"></div>
     <div id="wiki-empty" class="d-none content-box text-left">
       <p>No wiki page for this card yet. Artists and collectors can add one by creating <code>wiki/<span id="wiki-empty-asset"></span>.md</code> in the repo and opening a pull request.</p>
@@ -48,12 +49,13 @@
 
   <footer class="mt-auto">
     <div id="footer" class="jumbotron jumbotron-fluid m-0 p-1">
-      <p><a href="faq.html" class="link-undecorated">FAQ</a></p>
+      <p><a href="faq.html" class="link-undecorated">FAQ</a> · <a href="wiki.html" class="link-undecorated">Wiki</a> · <a href="book-of-kek.html" class="link-undecorated">Book of Kek</a></p>
       <p id="copyright">&copy;2021 RarePepeWorld.com</p>
       <p id="rights-reserved">All rights reserved</p>
     </div>
   </footer>
 
+  <script src="https://cdn.jsdelivr.net/npm/marked@8.0.1/marked.min.js"></script>
   <script src="js/wiki.js"></script>
 </body>
 </html>

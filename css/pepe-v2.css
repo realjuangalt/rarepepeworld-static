@@ -1,0 +1,335 @@
+/**
+ * Pepe detail page — V2 design
+ * Same color scheme (green, blue, cream), balanced layout, clearer hierarchy.
+ * Load after custom.css + style.css when using pepe-v2.html.
+ */
+
+/* ---------- V2 design tokens ---------- */
+.pepe-v2 {
+  --pepe-v2-blue: #B2E6FB;
+  --pepe-v2-green: #7FCE65;
+  --pepe-v2-cream: #F6F6F4;
+  --pepe-v2-ink: #1a1a1a;
+  --pepe-v2-ink-muted: #4a4a4a;
+  --pepe-v2-radius: 20px;
+  --pepe-v2-radius-sm: 12px;
+  --pepe-v2-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+  --pepe-v2-shadow-sm: 0 2px 12px rgba(0, 0, 0, 0.06);
+  --pepe-v2-max: 1100px;
+  --pepe-v2-space: 1.5rem;
+  --pepe-v2-space-lg: 2rem;
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* ---------- Page background: subtle pattern + gradient ---------- */
+.pepe-v2 body {
+  background: var(--pepe-v2-blue);
+  background-image:
+    radial-gradient(ellipse 120% 80% at 50% -20%, rgba(127, 206, 101, 0.15), transparent),
+    radial-gradient(circle at 80% 50%, rgba(255,255,255,0.4) 0%, transparent 50%);
+  min-height: 100vh;
+}
+
+/* ---------- Main content container ---------- */
+.pepe-v2 #meta {
+  flex: 1;
+  padding: var(--pepe-v2-space) var(--pepe-v2-space) var(--pepe-v2-space-lg);
+}
+
+.pepe-v2 #pepe-details-main {
+  max-width: var(--pepe-v2-max);
+  margin: 0 auto;
+  padding-left: var(--pepe-v2-space);
+  padding-right: var(--pepe-v2-space);
+}
+
+/* ---------- Loading state ---------- */
+.pepe-v2 #pepe-loading {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: var(--pepe-v2-ink-muted);
+  font-size: 1.05rem;
+}
+
+/* ---------- Top: hero strip (asset name) ---------- */
+.pepe-v2 .pepe-v2-hero {
+  text-align: left;
+  margin-bottom: var(--pepe-v2-space-lg);
+  padding-bottom: var(--pepe-v2-space);
+  border-bottom: 2px solid rgba(0, 0, 0, 0.08);
+}
+
+.pepe-v2 .pepe-v2-hero .pepe-v2-breadcrumb {
+  font-size: 0.85rem;
+  margin-bottom: 0.5rem;
+}
+
+.pepe-v2 .pepe-v2-hero .pepe-v2-breadcrumb a {
+  color: var(--pepe-v2-ink-muted);
+  text-decoration: none;
+}
+
+.pepe-v2 .pepe-v2-hero .pepe-v2-breadcrumb a:hover {
+  color: var(--pepe-v2-ink);
+  text-decoration: underline;
+}
+
+.pepe-v2 .pepe-v2-hero h2 {
+  font-size: clamp(1.5rem, 4vw, 2.25rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--pepe-v2-ink);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.pepe-v2 .pepe-v2-hero h2 .pepe-v2-links {
+  font-size: 0.75em;
+  font-weight: 400;
+  opacity: 0.85;
+}
+
+.pepe-v2 .pepe-v2-hero h2 .pepe-v2-links a {
+  color: var(--pepe-v2-ink-muted);
+  text-decoration: none;
+  margin-left: 0.25rem;
+}
+
+.pepe-v2 .pepe-v2-hero h2 .pepe-v2-links a:hover {
+  color: var(--pepe-v2-green);
+}
+
+/* ---------- Two-column layout: image | details ---------- */
+.pepe-v2 .pepe-v2-main-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: var(--pepe-v2-space-lg);
+  align-items: start;
+}
+
+@media (min-width: 768px) {
+  .pepe-v2 .pepe-v2-main-grid {
+    grid-template-columns: minmax(280px, 0.4fr) 1fr;
+    gap: var(--pepe-v2-space-lg);
+  }
+}
+
+/* ---------- Image column: card frame ---------- */
+.pepe-v2 .pepe-v2-image-col {
+  position: relative;
+}
+
+@media (min-width: 768px) {
+  .pepe-v2 .pepe-v2-image-col {
+    position: sticky;
+    top: var(--pepe-v2-space);
+  }
+}
+
+.pepe-v2 .pepe-v2-image-wrap {
+  background: var(--pepe-v2-cream);
+  border-radius: var(--pepe-v2-radius);
+  padding: 1rem;
+  box-shadow: var(--pepe-v2-shadow);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.pepe-v2 .pepe-v2-image-wrap .pepe-image {
+  border-radius: var(--pepe-v2-radius-sm);
+  width: 100%;
+  height: auto;
+  display: block;
+  box-shadow: var(--pepe-v2-shadow-sm);
+}
+
+.pepe-v2 #pepe-image-link {
+  display: block;
+  line-height: 0;
+}
+
+/* ---------- Details column: cards ---------- */
+.pepe-v2 .pepe-v2-details-col {
+  display: flex;
+  flex-direction: column;
+  gap: var(--pepe-v2-space);
+}
+
+/* Stats card (Supply, Cap, Series, Artist, etc.) */
+.pepe-v2 .pepe-v2-card {
+  background: var(--pepe-v2-cream);
+  border-radius: var(--pepe-v2-radius);
+  padding: var(--pepe-v2-space);
+  box-shadow: var(--pepe-v2-shadow-sm);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  text-align: left;
+}
+
+.pepe-v2 .pepe-v2-card-title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--pepe-v2-ink-muted);
+  margin-bottom: var(--pepe-v2-space);
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+/* Definition-style rows (works with existing .row .pepe-details-head/.pepe-details-data) */
+.pepe-v2 .pepe-v2-stats {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.pepe-v2 .pepe-v2-stats .row {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 8rem 1fr;
+  align-items: baseline;
+  gap: 0.75rem;
+  font-size: 0.95rem;
+}
+
+.pepe-v2 .pepe-v2-stats .pepe-details-head {
+  color: var(--pepe-v2-ink-muted);
+  font-weight: 500;
+  padding: 0;
+}
+
+.pepe-v2 .pepe-v2-stats .pepe-details-head a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.pepe-v2 .pepe-v2-stats .pepe-details-data {
+  color: var(--pepe-v2-ink);
+  font-weight: 500;
+  padding: 0;
+}
+
+.pepe-v2 .pepe-v2-stats .pepe-details-data a {
+  color: var(--pepe-v2-ink);
+  text-decoration: none;
+}
+
+.pepe-v2 .pepe-v2-stats .pepe-details-data a:hover {
+  color: var(--pepe-v2-green);
+  text-decoration: underline;
+}
+
+/* Holders table card */
+.pepe-v2 .pepe-v2-holders .pepe-v2-card-title {
+  margin-bottom: 0.75rem;
+}
+
+.pepe-v2 #holders-supply {
+  font-size: 0.9rem;
+  color: var(--pepe-v2-ink-muted);
+  margin-bottom: 0.75rem;
+}
+
+.pepe-v2 #holders-table-div {
+  border-radius: var(--pepe-v2-radius-sm);
+  overflow: hidden;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.pepe-v2 #holders-table {
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.pepe-v2 #holders-table th {
+  background: var(--pepe-v2-ink);
+  color: var(--pepe-v2-cream);
+  font-weight: 600;
+  padding: 0.6rem 0.75rem;
+  border: none;
+}
+
+.pepe-v2 #holders-table td {
+  padding: 0.5rem 0.75rem;
+  border-color: rgba(0, 0, 0, 0.08);
+}
+
+.pepe-v2 #holders-table tbody tr:nth-of-type(odd) {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+.pepe-v2 #holders-table tbody tr:hover {
+  background: rgba(127, 206, 101, 0.08);
+}
+
+.pepe-v2 #holders-more {
+  margin-top: 0.75rem;
+  font-size: 0.9rem;
+}
+
+.pepe-v2 #holders-more a {
+  color: var(--pepe-v2-green);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.pepe-v2 #holders-more a:hover {
+  text-decoration: underline;
+}
+
+/* ---------- Wiki / Lore section (full width below) ---------- */
+.pepe-v2 #wiki-section {
+  margin-top: var(--pepe-v2-space-lg);
+  padding: var(--pepe-v2-space);
+  background: var(--pepe-v2-cream);
+  border-radius: var(--pepe-v2-radius);
+  box-shadow: var(--pepe-v2-shadow-sm);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.pepe-v2 .pepe-v2-lore-label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--pepe-v2-ink-muted);
+  margin-bottom: 1rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.pepe-v2 #wiki-loading,
+.pepe-v2 #wiki-empty {
+  color: var(--pepe-v2-ink-muted);
+  font-size: 0.95rem;
+  text-align: left;
+}
+
+.pepe-v2 #wiki-content.wiki-markdown {
+  padding: 0;
+  margin: 0;
+}
+
+/* ---------- Hide v2-only elements when content is hidden ---------- */
+.pepe-v2 #pepe-content.d-none ~ .pepe-v2-hero,
+.pepe-v2 #pepe-content.d-none ~ .pepe-v2-main-grid {
+  display: none !important;
+}
+
+/* ---------- Responsive ---------- */
+@media (max-width: 767px) {
+  .pepe-v2 .pepe-v2-hero {
+    margin-bottom: var(--pepe-v2-space);
+  }
+
+  .pepe-v2 .pepe-v2-stats .row {
+    grid-template-columns: 1fr;
+    gap: 0.2rem;
+  }
+
+  .pepe-v2 .pepe-v2-image-wrap {
+    padding: 0.75rem;
+  }
+}

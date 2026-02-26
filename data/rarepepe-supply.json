@@ -1,1 +1,26 @@
-{}
+{
+  "_meta": {
+    "source": "TokenScan API",
+    "updated": "2026-02-26T05:06:44Z",
+    "overrides_applied": true,
+    "skip_destructions": false
+  },
+  "BABERUTHPEPE": {
+    "circulating": "150",
+    "divisible": false,
+    "destroyed": "0",
+    "issued": "150"
+  },
+  "BACHELORPEPE": {
+    "circulating": "25",
+    "divisible": false,
+    "destroyed": "0",
+    "issued": "25"
+  },
+  "BACKPAGEPEPE": {
+    "circulating": "69",
+    "divisible": false,
+    "destroyed": "100",
+    "issued": "169"
+  }
+}

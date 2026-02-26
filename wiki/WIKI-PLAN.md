@@ -43,3 +43,13 @@ A **static, GitHub-based wiki** where each of the 1,774 Rare Pepe cards can have
 5. After deploy (e.g. GitHub Pages), the card’s wiki page updates.
 
 No backend, no wiki engine — just Markdown in the repo and a static viewer.
+
+## Book of Kek integration
+
+We **clone or fetch** [thepepeinc/book-of-kek](https://github.com/thepepeinc/book-of-kek) into `static-site/book-of-kek` and display it in its own **Book of Kek** format:
+
+- **`book-of-kek.html`** — Viewer with sidebar table of contents (from `book-of-kek/SUMMARY.md`) and main content area. Each chapter/section is loaded as Markdown and rendered with marked.js. GitBook blocks (`{% embed %}`, `{% hint %}`, etc.) are stripped for display.
+- **Content:** Historical lore (Matt Furie, Pepe’s creation, memes, reclaiming Pepe), the Rare Pepe project (directory, valuation, scientists, artists, **per-series lore** for Series 1–36, Famous Rare Pepe Cards), Fake Rares & Dank Rares, Counterparty how-tos, latest developments (pepe.wtf, PepePawnShop, Notable Pepes, etc.).
+- **Not per-card:** Book of Kek is organized by chapter and series; our **Wiki** remains the per-card source. We use BoK as reference for wiki write-ups and attribute it; the Book of Kek viewer is complementary reading.
+
+To populate the viewer, run `scripts/fetch_book_of_kek.sh` from the static-site folder (or clone the repo into `static-site/book-of-kek`).

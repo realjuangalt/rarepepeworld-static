@@ -16,6 +16,29 @@
     if (!s) return ''; var d = document.createElement('div'); d.textContent = s; return d.innerHTML;
   }
 
+  function simpleMarkdownToHtml(md, escapeFn) {
+    if (!escapeFn) escapeFn = function (s) { return s; };
+    return md
+      .replace(/^### (.+)$/gm, function (_, c) { return '<h3>' + escapeFn(c) + '</h3>'; })
+      .replace(/^## (.+)$/gm, function (_, c) { return '<h2>' + escapeFn(c) + '</h2>'; })
+      .replace(/^# (.+)$/gm, function (_, c) { return '<h1>' + escapeFn(c) + '</h1>'; })
+      .replace(/\*\*(.+?)\*\*/g, function (_, c) { return '<strong>' + escapeFn(c) + '</strong>'; })
+      .replace(/\*(.+?)\*/g, function (_, c) { return '<em>' + escapeFn(c) + '</em>'; })
+      .replace(/\[([^\]]+)\]\(([^)]+)\)/g, function (_, label, url) { return '<a href="' + escapeHtml(url) + '" target="_blank" rel="noopener noreferrer">' + escapeFn(label) + '</a>'; })
+      .replace(/\n/g, '<br>\n');
+  }
+
+  function renderMarkdownToHtml(md, escapeFn) {
+    if (!md || typeof md !== 'string') return '';
+    var m = typeof window !== 'undefined' && window.marked;
+    if (m && m.default) m = m.default;
+    try {
+      if (m && typeof m.parse === 'function') return m.parse(md);
+      if (m && typeof m === 'function') return m(md);
+    } catch (e) { /* fall through to fallback */ }
+    return '<div class="wiki-content">' + simpleMarkdownToHtml(md, escapeFn) + '</div>';
+  }
+
   function flattenSeries(seriesData) {
     var list = [];
     if (!seriesData || typeof seriesData !== 'object') return list;
@@ -45,27 +68,58 @@
       content.classList.add('d-none');
       empty.classList.add('d-none');
       index.classList.add('d-none');
+      var dataBar = document.getElementById('wiki-data-bar');
+      if (dataBar) dataBar.classList.add('d-none');
 
-      fetch(WIKI_BASE + '/' + encodeURIComponent(asset) + '.md')
-        .then(function (r) {
+      Promise.all([
+        fetch(WIKI_BASE + '/' + encodeURIComponent(asset) + '.md').then(function (r) {
           if (!r.ok) throw new Error('Not found');
           return r.text();
-        })
-        .then(function (md) {
-          loading.classList.add('d-none');
-          if (typeof marked !== 'undefined') {
-            content.innerHTML = marked.parse(md || '');
-            content.classList.remove('d-none');
-          } else {
-            content.innerHTML = '<pre>' + escapeHtml(md) + '</pre>';
-            content.classList.remove('d-none');
-          }
-        })
-        .catch(function () {
-          loading.classList.add('d-none');
-          document.getElementById('wiki-empty-asset').textContent = asset;
-          empty.classList.remove('d-none');
+        }),
+        fetch(DATA_BASE + '/rarepepe-supply.json').then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; }),
+        fetch(DATA_BASE + '/RarePepeDirectory_Series_Data.json').then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; })
+      ]).then(function (results) {
+        var md = results[0];
+        var supplyData = results[1] || {};
+        var seriesData = results[2] || {};
+        loading.classList.add('d-none');
+        content.innerHTML = renderMarkdownToHtml(md || '', escapeHtml);
+        content.classList.remove('d-none');
+        var seriesNum = null;
+        Object.keys(seriesData).forEach(function (k) {
+          if ((seriesData[k] || []).indexOf(asset) !== -1) seriesNum = k;
         });
+        var supplyEntry = supplyData[asset] || {};
+        if (!supplyEntry.issued && supplyData._meta) supplyEntry = {};
+        var issued = supplyEntry.issued;
+        var circulating = supplyEntry.circulating;
+        var divisible = supplyEntry.divisible;
+        var destroyed = supplyEntry.destroyed != null ? String(supplyEntry.destroyed) : '';
+        var parts = [];
+        if (seriesNum !== null && seriesNum !== undefined) parts.push('Series ' + escapeHtml(String(seriesNum)));
+        if (issued != null && issued !== '') {
+          if (divisible) {
+            parts.push('Supply: divisible (circulating ' + escapeHtml(String(circulating != null ? circulating : issued)) + ')');
+          } else {
+            var circ = circulating != null ? circulating : issued;
+            var supplyStr = 'Supply: ' + escapeHtml(String(circ)) + ' / ' + escapeHtml(String(issued));
+            if (destroyed && parseInt(destroyed, 10) > 0) supplyStr += ' (' + escapeHtml(destroyed) + ' destroyed)';
+            parts.push(supplyStr);
+          }
+        }
+        if (parts.length && dataBar) {
+          dataBar.innerHTML = parts.join(' · ');
+          dataBar.classList.remove('d-none');
+        }
+      }).catch(function (e) {
+        if (typeof window.rpwWarn === 'function') {
+          window.rpwWarn('wiki.js: asset wiki fetch failed', { asset: asset, error: String(e && e.message || e) });
+        }
+        loading.classList.add('d-none');
+        var emptyAssetEl = document.getElementById('wiki-empty-asset');
+        if (emptyAssetEl) emptyAssetEl.textContent = asset;
+        empty.classList.remove('d-none');
+      });
       return;
     }
 
@@ -96,7 +150,10 @@
         indexList.innerHTML = html;
         index.classList.remove('d-none');
       })
-      .catch(function () {
+      .catch(function (err) {
+        if (typeof window.rpwWarn === 'function') {
+          window.rpwWarn('wiki.js: series data fetch failed', { error: String(err && err.message || err) });
+        }
         loading.classList.add('d-none');
         indexList.innerHTML = '<p class="col-12 text-muted">Load data/RarePepeDirectory_Series_Data.json to list cards.</p>';
         index.classList.remove('d-none');

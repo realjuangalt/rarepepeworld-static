@@ -81,3 +81,40 @@ The script also copies `RarePepeDirectory_Links.json` and `RarePepeDirectory_Ser
 - RPD has **Series 1–36** in the menu; the script crawls all of them plus the homepage.
 - Pagination on listing pages is followed so every pepe link is discovered.
 - This is for **archival/historical** use; run occasionally to refresh the snapshot.
+
+---
+
+## fetch_book_of_kek.sh — Book of Kek content for the static site
+
+Downloads [thepepeinc/book-of-kek](https://github.com/thepepeinc/book-of-kek) into `static-site/book-of-kek` so the **Book of Kek** viewer (`book-of-kek.html`) can display it. The Book of Kek has per-series lore, Famous Rare Pepe Cards, historical lore (Matt Furie, Pepe’s history), Counterparty how-tos, and more—no per-card pages, but rich complementary content.
+
+### Run
+
+From `static-site/` (or repo root; the script resolves paths):
+
+```bash
+chmod +x scripts/fetch_book_of_kek.sh
+./scripts/fetch_book_of_kek.sh
+```
+
+This fetches the repo as a tarball and extracts to `book-of-kek/`. Open `book-of-kek.html` in a browser (or deploy the site); the viewer loads `book-of-kek/SUMMARY.md` for the table of contents and fetches each chapter/section as Markdown. GitBook-style `{% embed %}`, `{% hint %}`, etc. are stripped for cleaner display.
+
+**Alternative:** Clone the repo manually:
+
+```bash
+cd static-site && git clone https://github.com/thepepeinc/book-of-kek.git
+```
+
+Then optionally remove the `.git` folder if you don’t need it as a submodule.
+
+---
+
+## enrich_wiki.py — Fill stub wiki pages with supply and series
+
+Updates wiki **Supply:** and **Series:** placeholders from data files. Requires data/rarepepe-supply.json (run build_supply_data.py first). Run: python enrich_wiki.py. Options: --wiki-dir, --data-dir, --dry-run.
+
+---
+
+## bok_to_wiki.py — Fill stub wikis from Book of Kek series lore
+
+Parses `book-of-kek/.../series-and-card-specific-lore/series-*.md` and updates **stub** wiki pages (those with "No wiki content yet") with the extracted lore for that asset, plus Book of Kek attribution. Requires the Book of Kek repo under `static-site/book-of-kek` (run `fetch_book_of_kek.sh` first). Run: `python bok_to_wiki.py`. Options: `--book-dir`, `--wiki-dir`, `--dry-run`.

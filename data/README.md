@@ -6,6 +6,7 @@
 - **RarePepeDirectory_Series_Data.json** — Series number → list of asset names. From `scripts/archive_rpd.py`.
 - **rarepepe-supply.json** — Per-asset supply caps (issued, destroyed, circulating). From `scripts/build_supply_data.py` (TokenScan API). Used on the address page for “Owns X of Y” (Y = circulating supply).
 - **rarepepe-supply-overrides.json** — Optional: artist corrections. When someone reports wrong supply, add an entry here and re-run `build_supply_data.py` to merge with API data.
+- **asset_metadata.json** — Historical per-asset metadata: `artist` (issuer Bitcoin/XCP address, linked to the artist page) and `supply_cap` (original supply cap when known). Supply cap is shown site-wide: asset page (“Supply cap” row), artist/search/index cards (“Cap: N”), and address page (“Owns X of Y”). Priority: `rarepepe-supply.json` issued first, then `asset_metadata.supply_cap` as fallback when issued is missing.
 
 ## Supply data (issued, burns, circulating)
 

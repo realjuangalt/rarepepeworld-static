@@ -29,12 +29,7 @@
   }
 
   function pepeImageUrl(name) {
-    var safe = (name || '').replace(/[^A-Za-z0-9._-]/g, '');
-    return safe ? 'archive/pepes/' + safe + '.jpg' : '';
-  }
-
-  function placeholderImg() {
-    return 'data:image/svg+xml,' + encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" viewBox="0 0 200 200"><rect fill="#e9ecef" width="200" height="200"/><text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" fill="#6c757d">?</text></svg>');
+    return (typeof window.pepeImageUrlFirst === 'function') ? window.pepeImageUrlFirst(name) : ('archive/pepes/' + (name || '').replace(/[^A-Za-z0-9._-]/g, '') + '.jpg');
   }
 
   function formatSupply(supplyStr) {
@@ -66,7 +61,9 @@
       '<div class="col p-3">' +
         '<div class="text-center" id="card_pepe_name"><span class="font-weight-bold">' + escapeHtml(name) + '</span></div>' +
         '<div class="text-center" id="card-image">' +
-          '<a href="' + href + '" class="link-undecorated"><img class="card-image rounded" src="' + imgUrl + '" height="210" alt="' + escapeHtml(name) + '" onerror="this.src=\'' + placeholderImg() + '\'"></a>' +
+          '<div class="pepe-card-slot">' +
+            '<a href="' + href + '" class="link-undecorated"><img class="card-image rounded" data-asset="' + escapeHtml(name) + '" src="' + imgUrl + '" alt="' + escapeHtml(name) + '" onerror="tryNextPepeExt(this)"></a>' +
+          '</div>' +
         '</div>' +
         '<div class="sub-data text-center"><span id="card-line-1">' + escapeHtml(line1) + '</span></div>' +
       '</div>'
@@ -101,10 +98,11 @@
     function showSlide(i) {
       index = (i + assetList.length) % assetList.length;
       var a = assetList[index];
-      img.src = a.imgUrl || placeholderImg();
+      img.setAttribute('data-asset', a.name || '');
+      img.src = a.imgUrl || (typeof window.pepeImageUrlFirst === 'function' ? window.pepeImageUrlFirst(a.name) : '') || (window.pepeImagePlaceholder || '');
       img.alt = a.name;
       caption.textContent = a.name;
-      img.onerror = function () { this.src = placeholderImg(); };
+      img.onerror = function () { (typeof window.tryNextPepeExt === 'function' ? window.tryNextPepeExt(img) : (img.src = window.pepeImagePlaceholder || '')); };
     }
 
     function stopSlideshow() {
@@ -150,9 +148,11 @@
         }
         var supplyPromise = fetch(DATA_BASE + '/rarepepe-supply.json').then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; });
         var linksPromise = fetch(DATA_BASE + '/RarePepeDirectory_Links.json').then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; });
-        return Promise.all([supplyPromise, linksPromise]).then(function (results) {
+        var metadataPromise = fetch(DATA_BASE + '/asset_metadata.json').then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; });
+        return Promise.all([supplyPromise, linksPromise, metadataPromise]).then(function (results) {
           var supplyMap = results[0] || {};
           var links = results[1] || {};
+          var assetMetadata = results[2] || {};
           var legible = [];
           var otherCount = 0;
           assets.forEach(function (a) {
@@ -166,6 +166,9 @@
             if (div) qty = (parseFloat(qty) * 1e8).toFixed(0);
             var qtyStr = Number(qty).toLocaleString();
             var supplyStr = getSupplyDisplay(supplyMap, name);
+            if (supplyStr == null && assetMetadata[name] && (assetMetadata[name].supply_cap != null && assetMetadata[name].supply_cap !== '')) {
+              supplyStr = String(assetMetadata[name].supply_cap);
+            }
             legible.push({ name: name, qtyStr: qtyStr, supplyStr: supplyStr, imgUrl: pepeImageUrl(name) });
           });
           var cards = legible.map(function (a) {
@@ -186,6 +189,9 @@
         });
       })
       .catch(function (err) {
+        if (typeof window.rpwWarn === 'function') {
+          window.rpwWarn('address.js: balances fetch failed', { address: addr, error: String(err && err.message || err) });
+        }
         row.innerHTML =
           '<p class="col-12 text-muted">Could not load holdings from the API. ' +
           '<a href="' + TOKENSCAN + '/address/' + encodeURIComponent(addr) + '">View this address on TokenScan</a> to see balances.</p>' +

@@ -6,7 +6,7 @@ One Markdown file per Rare Pepe asset. Each card has a page at `wiki.html?asset=
 
 Content is adapted from community wikis where applicable:
 
-- **[Book of Kek](https://wiki.pepe.wtf/)** (pepe.wtf) — [Famous Rare Pepe Cards](https://wiki.pepe.wtf/chapter-2-the-rare-pepe-project/the-rare-pepe-blockchain-project/famous-rare-pepe-cards), [Series & Card Specific Lore](https://wiki.pepe.wtf/chapter-2-the-rare-pepe-project/the-rare-pepe-blockchain-project/series-and-card-specific-lore). Credit: Pepe Inc., Subterranean, and contributors.
+- **[Book of Kek](https://wiki.pepe.wtf/)** (pepe.wtf) — [Famous Rare Pepe Cards](https://wiki.pepe.wtf/chapter-2-the-rare-pepe-project/the-rare-pepe-blockchain-project/famous-rare-pepe-cards), [Series & Card Specific Lore](https://wiki.pepe.wtf/chapter-2-the-rare-pepe-project/the-rare-pepe-blockchain-project/series-and-card-specific-lore). Credit: Pepe Inc., Subterranean, and contributors. The full Book of Kek ([source repo](https://github.com/thepepeinc/book-of-kek)) is integrated on this site and viewable at **Book of Kek** (link in the footer).
 - **Rare Pepe Directory** — Official list of 1,774 cards across 36 series (submissions closed 2018).
 
 We do not copy the Book of Kek verbatim; we use it as reference and attribute where we adapt. Artists are encouraged to add or correct lore for their own cards.
