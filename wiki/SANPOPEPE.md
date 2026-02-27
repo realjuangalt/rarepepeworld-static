@@ -1,0 +1,8 @@
+# SANPOPEPE
+
+**Series:** 23
+**Supply:** —
+
+## Lore
+
+No wiki content yet. See [pepe.wtf](https://pepe.wtf/asset/SANPOPEPE) or [TokenScan](https://tokenscan.io/asset/SANPOPEPE). To add lore, open a pull request—see [wiki/README.md](README.md).

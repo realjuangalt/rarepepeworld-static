@@ -34,12 +34,12 @@
       fetch(API + '/asset/' + encodeURIComponent(asset)).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
       fetch(API + '/holders/' + encodeURIComponent(asset)).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
       fetch('data/burn_addresses.json').then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; }),
-      fetch('data/rarepepe-supply.json').then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; })
+      fetch('data/asset_metadata.json').then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; })
     ]).then(function (results) {
       var assetData = results[0];
       var holdersData = results[1];
       var burnAddresses = results[2] || [];
-      var supplyData = results[3] || {};
+      var assetMetadata = results[3] || {};
       var burnSet = {};
       burnAddresses.forEach(function (addr) { if (addr) burnSet[addr] = true; });
 
@@ -49,7 +49,7 @@
       document.getElementById('holders-back-link').href = 'pepe.html?asset=' + encodeURIComponent(asset);
 
       var divisible = false;
-      var supplyEntry = supplyData[asset];
+      var supplyEntry = assetMetadata[asset];
       if (supplyEntry && supplyEntry.issued != null && supplyEntry.issued !== '' && !supplyEntry.note) {
         divisible = supplyEntry.divisible || false;
       } else if (assetData && assetData.divisible != null) {

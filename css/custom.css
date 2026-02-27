@@ -101,7 +101,7 @@ body {
 .featured-pepe-slot {
   position: relative;
   width: 100%;
-  max-width: 320px;
+  max-width: 380px;
   margin: 0 auto;
   overflow: visible;
 }
@@ -208,6 +208,7 @@ td, th { padding: 0.5rem 0.6rem; border: 1px solid #ccc; }
 #featured-section-row > .col {
   width: 100%;
   max-width: 320px;
+  min-width: 200px;
 }
 
 #latest-dispensers-section-row > .col {
@@ -246,9 +247,14 @@ td, th { padding: 0.5rem 0.6rem; border: 1px solid #ccc; }
   object-fit: contain;
   margin: 0;
 }
+
 #card-list-row .col .pepe-card-slot,
-#latest-dispensers-section-row .pepe-card-slot {
+#featured-section-row .pepe-card-slot {
   max-width: 100%;
+}
+
+#featured-section-row .featured-pepe-slot {
+  min-height: 320px;
 }
 
 /* ----- Wiki (lore / card story) — same card as pepe-info-section ----- */
@@ -397,7 +403,7 @@ td, th { padding: 0.5rem 0.6rem; border: 1px solid #ccc; }
 }
 
 @media (min-width: 768px) {
-  #featured-section-row > .col { width: 33.333%; max-width: 320px; }
+  #featured-section-row > .col { width: 50%; max-width: 400px; }
   #pepe-content .row > .col-md-5 { padding-left: 1rem; padding-right: 1rem; }
   #pepe-content .row > .col-md-7 { padding-left: 1rem; padding-right: 1rem; }
   #latest-dispensers-section-row > .col { width: 25%; }
@@ -406,7 +412,7 @@ td, th { padding: 0.5rem 0.6rem; border: 1px solid #ccc; }
 
 @media (min-width: 992px) {
   #section-search { width: 40%; max-width: 400px; }
-  #featured-section-row > .col { width: auto; max-width: 320px; }
+  #featured-section-row > .col { width: auto; max-width: 420px; }
   #latest-dispensers-section-row > .col { width: 16.666%; min-width: 0; }
   #card-list-row .col { width: 16.666%; min-width: 0; }
 }

@@ -4,10 +4,10 @@
  * Data sources (aligned with v1 RarePepeWorld.com where possible):
  * - TokenScan API: /asset, /holders, /destructions, /market/{asset}/{XCP|PEPECASH}/orderbook
  *   (v1 used XChain API + MySQL populated from Counterparty RPC; TokenScan is same ecosystem.)
- * - Local: rarepepe-supply.json (issued/circulating/destroyed), RarePepeDirectory_Series_Data.json,
- *   RarePepeDirectory_Links.json, burn_addresses.json (known burn addresses for "Real Supply").
+ * - Local: asset_metadata.json (issued/circulating/destroyed, supply_cap, artist, series, rpd_url),
+ *   RarePepeDirectory_Series_Data.json, RarePepeDirectory_Links.json, burn_addresses.json (Real Supply).
  *
- * Supply: prefers local JSON; fallback TokenScan asset.supply (current) + destructions → issued.
+ * Supply: prefers asset_metadata.json; fallback TokenScan asset.supply + destructions → issued.
  * Real Supply (Holders tab): sum(holder quantities) minus holdings at known burn addresses (v1 logic).
  */
 (function () {
@@ -144,7 +144,6 @@
       fetch(API + '/asset/' + encodeURIComponent(asset)).then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
       fetch(API + '/market/' + encodeURIComponent(asset) + '/XCP/orderbook').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
       fetch(API + '/market/' + encodeURIComponent(asset) + '/PEPECASH/orderbook').then(function (r) { return r.ok ? r.json() : null; }).catch(function () { return null; }),
-      fetch('data/rarepepe-supply.json').then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; }),
       fetch('data/RarePepeDirectory_Series_Data.json').then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; }),
       fetch(API + '/destructions/' + encodeURIComponent(asset)).then(function (r) { return r.ok ? r.json() : { data: [] }; }).catch(function () { return { data: [] }; }),
       fetch('data/burn_addresses.json').then(function (r) { return r.ok ? r.json() : []; }).catch(function () { return []; }),
@@ -155,15 +154,15 @@
       var assetData = results[1];
       var xcpOrderbook = results[2];
       var pcOrderbook = results[3];
-      var supplyData = results[4] || {};
-      var seriesData = results[5] || {};
-      var destructionsData = results[6] || { data: [] };
-      var burnAddresses = results[7] || [];
-      var assetMetadata = results[8] || {};
+      var seriesData = results[4] || {};
+      var destructionsData = results[5] || { data: [] };
+      var burnAddresses = results[6] || [];
+      var assetMetadata = results[7] || {};
+      var supplyEntry = assetMetadata[asset] || null;
 
       document.title = asset + ' — RARE PEPE WORLD';
 
-      var rpdUrl = links[asset] || '';
+      var rpdUrl = (assetMetadata[asset] && assetMetadata[asset].rpd_url) || links[asset] || '';
       document.getElementById('pepe-rpd-link').href = rpdUrl || '#';
       document.getElementById('pepe-rpd-link').style.display = rpdUrl ? '' : 'none';
       var xchainEl = document.getElementById('pepe-xchain-link');
@@ -173,12 +172,13 @@
       }
 
       document.getElementById('pepe-name').textContent = asset;
+      var nameDetails = document.getElementById('pepe-name-details');
+      if (nameDetails) nameDetails.textContent = asset;
       var breadcrumb = document.querySelector('.pepe-v2-breadcrumb');
       if (breadcrumb) breadcrumb.innerHTML = '<a href="index.html">Home</a> / ' + escapeHtml(asset);
 
       var supply = '—';
       var divisible = false;
-      var supplyEntry = supplyData[asset];
       if (supplyEntry && supplyEntry.issued != null && supplyEntry.issued !== '' && !supplyEntry.note) {
         divisible = supplyEntry.divisible || false;
         var circ = supplyEntry.circulating != null ? supplyEntry.circulating : supplyEntry.issued;
@@ -221,13 +221,17 @@
       if (supplyCapEl) supplyCapEl.textContent = capValue;
 
       var series = '—';
-      var seriesNum = null;
-      Object.keys(seriesData).forEach(function (k) {
-        if (k === '_meta' || !Array.isArray(seriesData[k])) return;
-        if (seriesData[k].indexOf(asset) !== -1) seriesNum = k;
-      });
-      if (seriesNum != null) series = String(seriesNum);
-      else if (assetData && assetData.asset_longname) series = assetData.asset_longname;
+      if (assetMetadata[asset] && assetMetadata[asset].series != null && assetMetadata[asset].series !== '') {
+        series = String(assetMetadata[asset].series);
+      } else {
+        var seriesNum = null;
+        Object.keys(seriesData).forEach(function (k) {
+          if (k === '_meta' || !Array.isArray(seriesData[k])) return;
+          if (seriesData[k].indexOf(asset) !== -1) seriesNum = k;
+        });
+        if (seriesNum != null) series = String(seriesNum);
+        else if (assetData && assetData.asset_longname) series = assetData.asset_longname;
+      }
       document.getElementById('pepe-series').textContent = series;
 
       var artist = '—';
@@ -282,7 +286,13 @@
         .then(function (md) {
           if (loadingEl) loadingEl.classList.add('d-none');
           if (emptyEl) emptyEl.classList.add('d-none');
-          if (contentEl) setWikiContentWithMarkdown(contentEl, md);
+          if (contentEl) {
+            setWikiContentWithMarkdown(contentEl, md);
+            var h1 = contentEl.querySelector('h1');
+            if (h1 && String((h1.textContent || '')).trim().toUpperCase() === asset.toUpperCase()) {
+              h1.parentNode.removeChild(h1);
+            }
+          }
         })
         .catch(function (e) {
           if (typeof window.rpwWarn === 'function') {

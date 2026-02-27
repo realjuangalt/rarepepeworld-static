@@ -1,0 +1,83 @@
+/**
+ * Random Pepes section: shuffle button, 3D card flip, and spin animation.
+ * All styling for this effect lives here so changes elsewhere don’t break it.
+ */
+
+.random-shuffle-heading {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  padding: 0.25rem 0.9rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.random-shuffle-heading:hover {
+  background: rgba(255, 255, 255, 0.75);
+}
+
+/* Spin animation in three phases so we can swap faces only when card is edge-on */
+.random-pepe-spin-a {
+  /* Phase A: 0deg → 90deg (old front rotates out) */
+  animation: random-pepe-spin-a 0.75s ease forwards;
+}
+
+.random-pepe-spin-b {
+  /* Phase B: 90deg → 270deg (back of card visible) */
+  animation: random-pepe-spin-b 1.5s ease forwards;
+}
+
+.random-pepe-spin-c {
+  /* Phase C: 270deg → 360deg (new front rotates in) */
+  animation: random-pepe-spin-c 0.75s ease forwards;
+}
+
+@keyframes random-pepe-spin-a {
+  0% { transform: rotateY(0deg); }
+  100% { transform: rotateY(90deg); }
+}
+
+@keyframes random-pepe-spin-b {
+  0% { transform: rotateY(90deg); }
+  100% { transform: rotateY(270deg); }
+}
+
+@keyframes random-pepe-spin-c {
+  0% { transform: rotateY(270deg); }
+  100% { transform: rotateY(360deg); }
+}
+
+/* Random Pepes: 3D flip with PUMPURPEPE back during shuffle */
+#latest-dispensers-section-row .pepe-card-slot {
+  max-width: 100%;
+}
+
+.random-pepe-card .pepe-card-slot {
+  perspective: 1000px;
+  background: transparent; /* no box behind the flipping faces */
+}
+
+.random-pepe-card .pepe-card-inner {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+}
+
+.random-pepe-card .pepe-card-face {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  border-radius: 12px;
+  overflow: hidden;
+  background: #e9ecef; /* only on the faces so image area isn’t transparent */
+}
+
+.random-pepe-card .pepe-card-back {
+  transform: rotateY(180deg);
+}
+
+.random-pepe-card .pepe-card-back .card-image {
+  object-fit: cover; /* back image fills the card face */
+}

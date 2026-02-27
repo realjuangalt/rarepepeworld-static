@@ -1,5 +1,5 @@
 /**
- * Address page — holdings from API (Owns X of Y); Y = minted supply from data/rarepepe-supply.json.
+ * Address page — holdings from API (Owns X of Y); Y = supply from data/asset_metadata.json.
  * Only "legible" Rare Pepe assets (named, not numeric IDs) are shown in the grid.
  */
 (function () {
@@ -146,13 +146,11 @@
           row.innerHTML = '<p class="col-12 text-muted">No balances for this address.</p>';
           return;
         }
-        var supplyPromise = fetch(DATA_BASE + '/rarepepe-supply.json').then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; });
         var linksPromise = fetch(DATA_BASE + '/RarePepeDirectory_Links.json').then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; });
         var metadataPromise = fetch(DATA_BASE + '/asset_metadata.json').then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; });
-        return Promise.all([supplyPromise, linksPromise, metadataPromise]).then(function (results) {
-          var supplyMap = results[0] || {};
-          var links = results[1] || {};
-          var assetMetadata = results[2] || {};
+        return Promise.all([linksPromise, metadataPromise]).then(function (results) {
+          var links = results[0] || {};
+          var assetMetadata = results[1] || {};
           var legible = [];
           var otherCount = 0;
           assets.forEach(function (a) {
@@ -165,7 +163,7 @@
             var div = a.divisible;
             if (div) qty = (parseFloat(qty) * 1e8).toFixed(0);
             var qtyStr = Number(qty).toLocaleString();
-            var supplyStr = getSupplyDisplay(supplyMap, name);
+            var supplyStr = getSupplyDisplay(assetMetadata, name);
             if (supplyStr == null && assetMetadata[name] && (assetMetadata[name].supply_cap != null && assetMetadata[name].supply_cap !== '')) {
               supplyStr = String(assetMetadata[name].supply_cap);
             }
