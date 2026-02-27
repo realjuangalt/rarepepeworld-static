@@ -22,6 +22,7 @@ Usage:
   --merge              Only fetch assets missing issued (or with note "API missing"); merge into existing file
   --skip-destructions  Only fetch asset supply; set destroyed=0, circulating=issued (faster but incomplete)
   --limit N            Max assets to fetch (0 = all)
+  --checkpoint-every N Write rarepepe-supply.json every N assets (0 = only at end; default 50)
 
 Requires: requests (pip install requests)
 """
@@ -160,6 +161,13 @@ def main() -> None:
         help="Do not fetch destructions; set destroyed=0, circulating=issued",
     )
     ap.add_argument("--limit", type=int, default=0, help="Max assets to fetch (0 = all)")
+    ap.add_argument(
+        "--checkpoint-every",
+        type=int,
+        default=50,
+        metavar="N",
+        help="Write output file every N assets so you see progress (0 = only at end)",
+    )
     args = ap.parse_args()
 
     script_dir = Path(__file__).resolve().parent
@@ -215,7 +223,11 @@ def main() -> None:
     if not assets_to_fetch and args.merge:
         print("Nothing to fetch. Exiting.")
         sys.exit(0)
-    print(f"Polling TokenScan API for {len(assets_to_fetch)} assets (one request at a time, delay={args.delay}s, retries={args.retries})…")
+    total_assets = len(assets_to_fetch)
+    print(
+        f"Polling TokenScan API for {total_assets} assets "
+        f"(one request at a time, delay={args.delay}s, retries={args.retries})…"
+    )
     if overrides:
         print(f"  Applying {len(overrides)} overrides from rarepepe-supply-overrides.json")
     if not args.skip_destructions:
@@ -224,9 +236,23 @@ def main() -> None:
     session = requests.Session()
     session.headers["User-Agent"] = "RarePepeWorld-Supply/1.0 (static site data)"
 
+    checkpoint_every = getattr(args, "checkpoint_every", 50) or 0
+
+    def write_checkpoint() -> None:
+        """Write current result to disk (same format as final file)."""
+        meta = {
+            "source": "TokenScan API",
+            "updated": datetime.now(timezone.utc).isoformat()[:19] + "Z",
+            "overrides_applied": len(overrides) > 0,
+            "skip_destructions": args.skip_destructions,
+            "checkpoint": True,
+        }
+        out = {"_meta": meta, **result}
+        with open(out_file, "w", encoding="utf-8") as f:
+            json.dump(out, f, indent=2)
+        print(f"  → checkpoint: wrote {len(result)} assets to {out_file.name}")
+
     for i, asset in enumerate(assets_to_fetch, 1):
-        if i % 50 == 0:
-            print(f"  {i}/{len(assets_to_fetch)}…")
         ov = overrides.get(asset) or {}
         entry: dict = {}
 
@@ -240,7 +266,16 @@ def main() -> None:
                 entry["circulating"] = str(info["supply"])
                 entry["divisible"] = info.get("divisible", False)
             else:
-                result[asset] = {"issued": None, "destroyed": "0", "circulating": None, "note": "API missing"}
+                entry = {
+                    "issued": None,
+                    "destroyed": "0",
+                    "circulating": None,
+                    "note": "API missing",
+                }
+                result[asset] = entry
+                print(f"[{i}/{total_assets}] {asset}: API missing")
+                if checkpoint_every and (i == 1 or i % checkpoint_every == 0):
+                    write_checkpoint()
                 continue
 
         if "destroyed" in ov and ov.get("destroyed") is not None:
@@ -270,6 +305,20 @@ def main() -> None:
         if ov.get("note"):
             entry["note"] = str(ov["note"])
         result[asset] = entry
+
+        issued = entry.get("issued")
+        destroyed = entry.get("destroyed")
+        circ = entry.get("circulating")
+        divisible = entry.get("divisible", False)
+        note = entry.get("note")
+        extra = f", note={note}" if note else ""
+        print(
+            f"[{i}/{total_assets}] {asset}: "
+            f"issued={issued}, destroyed={destroyed}, circulating={circ}, "
+            f"divisible={divisible}{extra}"
+        )
+        if checkpoint_every and (i == 1 or i % checkpoint_every == 0):
+            write_checkpoint()
 
     for a in all_assets:
         if a not in result:

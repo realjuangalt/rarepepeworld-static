@@ -1,0 +1,8 @@
+# PEPENUMA
+
+**Series:** 8
+**Supply:** —
+
+## Lore
+
+No wiki content yet. See [pepe.wtf](https://pepe.wtf/asset/PEPENUMA) or [TokenScan](https://tokenscan.io/asset/PEPENUMA). To add lore, open a pull request—see [wiki/README.md](README.md).

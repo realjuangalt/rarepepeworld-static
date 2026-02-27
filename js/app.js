@@ -52,14 +52,15 @@
     return copy.slice(0, n);
   }
 
-  function getCapDisplay(supplyData, assetMetadata, assetName) {
-    var entry = supplyData && supplyData[assetName];
-    if (entry && entry.issued != null && entry.issued !== '' && !entry.note) {
-      var n = Number(entry.issued);
+  /** assetMetadata is the single source (asset_metadata.json). Has issued, note, supply_cap per asset. */
+  function getCapDisplay(assetMetadata, assetName) {
+    var meta = assetMetadata && assetMetadata[assetName];
+    if (!meta) return '—';
+    if (meta.issued != null && meta.issued !== '' && !meta.note) {
+      var n = Number(meta.issued);
       return isNaN(n) ? '—' : 'Cap: ' + n.toLocaleString(undefined, { maximumFractionDigits: 0 });
     }
-    var meta = assetMetadata && assetMetadata[assetName];
-    if (meta && meta.supply_cap != null && meta.supply_cap !== '') {
+    if (meta.supply_cap != null && meta.supply_cap !== '') {
       var m = Number(meta.supply_cap);
       return isNaN(m) ? '—' : 'Cap: ' + m.toLocaleString(undefined, { maximumFractionDigits: 0 });
     }
@@ -84,46 +85,15 @@
     );
   }
 
-  /** Random Pepes grid: col-md-2, name, image 150, sub-data pay | stock/supply — v1 style */
-  function renderGridCard(asset, links, supplyStr, payStr) {
-    var name = asset.name || asset;
-    var series = asset.series != null ? asset.series : '';
-    var href = 'pepe.html?asset=' + encodeURIComponent(name);
-    var imgUrl = pepeImageUrl(name);
-    var line1 = payStr != null ? payStr : ('Series ' + series);
-    var line2 = supplyStr != null ? supplyStr : (series ? 'Series ' + series : '—');
-    return (
-      '<div class="col col-md-2">' +
-        '<div class="text-center" id="card_pepe_name">' +
-          '<span class="font-weight-bold"><a class="link-undecorated" href="' + href + '">' + escapeHtml(name) + '</a></span>' +
-        '</div>' +
-        '<div class="text-center" id="card-image">' +
-          '<div class="pepe-card-slot">' +
-            '<a class="link-undecorated" href="' + href + '">' +
-              '<img class="card-image rounded" data-asset="' + escapeHtml(name) + '" src="' + imgUrl + '" alt="' + escapeHtml(name) + '" onerror="tryNextPepeExt(this)">' +
-            '</a>' +
-          '</div>' +
-        '</div>' +
-        '<div class="sub-data text-center">' +
-          '<span id="card-line-1"><a class="link-undecorated" href="' + href + '">' + escapeHtml(line1) + '</a></span>' +
-          ' | <span id="card-line-2"><a class="link-undecorated" href="' + href + '">' + escapeHtml(line2) + '</a></span>' +
-        '</div>' +
-        '<p></p>' +
-      '</div>'
-    );
-  }
-
   function init() {
     Promise.all([
       get(DATA_BASE + '/RarePepeDirectory_Series_Data.json').catch(function () { return {}; }),
       get(DATA_BASE + '/RarePepeDirectory_Links.json').catch(function () { return {}; }),
-      get(DATA_BASE + '/rarepepe-supply.json').catch(function () { return {}; }),
       get(DATA_BASE + '/asset_metadata.json').catch(function () { return {}; })
     ]).then(function (results) {
       var seriesData = results[0];
       var links = results[1];
-      var supplyData = results[2] || {};
-      var assetMetadata = results[3] || {};
+      var assetMetadata = results[2] || {};
       var all = flattenSeries(seriesData);
       if (all.length === 0) {
         document.getElementById('featured-section-row').innerHTML = '<p class="col-12 text-muted">Load data/ (run archive script).</p>';
@@ -131,21 +101,27 @@
         return;
       }
       var featured = randomSample(all, 3);
-      var random = randomSample(all, 6);
       var featuredRow = document.getElementById('featured-section-row');
       var randomRow = document.getElementById('latest-dispensers-section-row');
+      var shuffleHeading = document.getElementById('latest-dispensers-section-heading');
+      var deps = {
+        get: get,
+        flattenSeries: flattenSeries,
+        randomSample: randomSample,
+        getCapDisplay: getCapDisplay,
+        pepeImageUrl: pepeImageUrl,
+        escapeHtml: escapeHtml,
+        DATA_BASE: DATA_BASE
+      };
+      if (window.RandomPepeCards) {
+        window.RandomPepeCards.init(randomRow, shuffleHeading, deps);
+        if (randomRow) randomRow.innerHTML = window.RandomPepeCards.renderInitialRow(seriesData, assetMetadata, links);
+      }
       if (typeof window.rpwWarn === 'function') {
-        window.rpwWarn('Index: rendering sections', { featuredCount: featured.length, randomCount: random.length, hasFeaturedRow: !!featuredRow, hasRandomRow: !!randomRow });
+        window.rpwWarn('Index: rendering sections', { featuredCount: featured.length, hasFeaturedRow: !!featuredRow, hasRandomRow: !!randomRow });
       }
       if (featuredRow && featured.length) {
         featuredRow.innerHTML = featured.map(function (a) { return renderFeaturedCard(a, links); }).join('');
-      }
-      if (randomRow && random.length) {
-        randomRow.innerHTML = random.map(function (a) {
-          var name = a.name || a;
-          var capStr = getCapDisplay(supplyData, assetMetadata, name);
-          return renderGridCard(a, links, capStr, 'Series ' + (a.series || '—'));
-        }).join('');
       }
     }).catch(function (err) {
       if (typeof window.rpwWarn === 'function') {

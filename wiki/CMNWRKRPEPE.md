@@ -1,0 +1,8 @@
+# CMNWRKRPEPE
+
+**Series:** 19
+**Supply:** —
+
+## Lore
+
+No wiki content yet. See [pepe.wtf](https://pepe.wtf/asset/CMNWRKRPEPE) or [TokenScan](https://tokenscan.io/asset/CMNWRKRPEPE). To add lore, open a pull request—see [wiki/README.md](README.md).

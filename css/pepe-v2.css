@@ -279,14 +279,9 @@
   text-decoration: underline;
 }
 
-/* ---------- Wiki / Lore section (full width below) ---------- */
+/* ---------- Wiki / Lore card (full width below grid) ---------- */
 .pepe-v2 #wiki-section {
   margin-top: var(--pepe-v2-space-lg);
-  padding: var(--pepe-v2-space);
-  background: var(--pepe-v2-cream);
-  border-radius: var(--pepe-v2-radius);
-  box-shadow: var(--pepe-v2-shadow-sm);
-  border: 1px solid rgba(0, 0, 0, 0.06);
 }
 
 .pepe-v2 .pepe-v2-lore-label {

@@ -76,21 +76,23 @@
           if (!r.ok) throw new Error('Not found');
           return r.text();
         }),
-        fetch(DATA_BASE + '/rarepepe-supply.json').then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; }),
+        fetch(DATA_BASE + '/asset_metadata.json').then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; }),
         fetch(DATA_BASE + '/RarePepeDirectory_Series_Data.json').then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; })
       ]).then(function (results) {
         var md = results[0];
-        var supplyData = results[1] || {};
+        var assetMetadata = results[1] || {};
         var seriesData = results[2] || {};
         loading.classList.add('d-none');
         content.innerHTML = renderMarkdownToHtml(md || '', escapeHtml);
         content.classList.remove('d-none');
-        var seriesNum = null;
-        Object.keys(seriesData).forEach(function (k) {
-          if ((seriesData[k] || []).indexOf(asset) !== -1) seriesNum = k;
-        });
-        var supplyEntry = supplyData[asset] || {};
-        if (!supplyEntry.issued && supplyData._meta) supplyEntry = {};
+        var seriesNum = (assetMetadata[asset] && assetMetadata[asset].series) ? assetMetadata[asset].series : null;
+        if (seriesNum === null) {
+          Object.keys(seriesData).forEach(function (k) {
+            if ((seriesData[k] || []).indexOf(asset) !== -1) seriesNum = k;
+          });
+        }
+        var supplyEntry = assetMetadata[asset] || {};
+        if (!supplyEntry.issued && assetMetadata._meta) supplyEntry = {};
         var issued = supplyEntry.issued;
         var circulating = supplyEntry.circulating;
         var divisible = supplyEntry.divisible;

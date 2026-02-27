@@ -22,14 +22,14 @@
     return (typeof window.pepeImageUrlFirst === 'function') ? window.pepeImageUrlFirst(name) : ('archive/pepes/' + (name || '').replace(/[^A-Za-z0-9._-]/g, '') + '.jpg');
   }
 
-  function getCapDisplay(supplyData, assetMetadata, assetName) {
-    var entry = supplyData && supplyData[assetName];
-    if (entry && entry.issued != null && entry.issued !== '' && !entry.note) {
-      var n = Number(entry.issued);
+  function getCapDisplay(assetMetadata, assetName) {
+    var meta = assetMetadata && assetMetadata[assetName];
+    if (!meta) return '—';
+    if (meta.issued != null && meta.issued !== '' && !meta.note) {
+      var n = Number(meta.issued);
       return isNaN(n) ? '—' : 'Cap: ' + n.toLocaleString(undefined, { maximumFractionDigits: 0 });
     }
-    var meta = assetMetadata && assetMetadata[assetName];
-    if (meta && meta.supply_cap != null && meta.supply_cap !== '') {
+    if (meta.supply_cap != null && meta.supply_cap !== '') {
       var m = Number(meta.supply_cap);
       return isNaN(m) ? '—' : 'Cap: ' + m.toLocaleString(undefined, { maximumFractionDigits: 0 });
     }
@@ -90,12 +90,10 @@
         }
         return Promise.all([
           fetch(DATA_BASE + '/RarePepeDirectory_Series_Data.json').then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; }),
-          fetch(DATA_BASE + '/rarepepe-supply.json').then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; }),
           fetch(DATA_BASE + '/asset_metadata.json').then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; })
         ]).then(function (results) {
           var seriesData = results[0];
-          var supplyData = results[1] || {};
-          var assetMetadata = results[2] || {};
+          var assetMetadata = results[1] || {};
           var seriesMap = {};
           if (seriesData && typeof seriesData === 'object') {
             Object.keys(seriesData).forEach(function (num) {
@@ -103,7 +101,7 @@
             });
           }
           var cards = assets.map(function (name) {
-            var capStr = getCapDisplay(supplyData, assetMetadata, name);
+            var capStr = getCapDisplay(assetMetadata, name);
             return renderCard(name, seriesMap[name] || '—', capStr !== '—' ? capStr : '—', {});
           });
           row.innerHTML = cards.join('');
