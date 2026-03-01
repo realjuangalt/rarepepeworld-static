@@ -74,6 +74,10 @@
 
   function startSlideshow(assetList) {
     if (!assetList || !assetList.length) return;
+    if (window._addressSlideshowTimer) {
+      clearInterval(window._addressSlideshowTimer);
+      window._addressSlideshowTimer = null;
+    }
     var overlay = document.getElementById('address-slideshow-overlay');
     if (!overlay) {
       overlay = document.createElement('div');
@@ -89,11 +93,24 @@
       document.addEventListener('keydown', function onKey(e) {
         if (e.key === 'Escape' && overlay.classList.contains('address-slideshow-active')) stopSlideshow();
       });
+      document.addEventListener('fullscreenchange', onFullscreenChange);
+      document.addEventListener('webkitfullscreenchange', onFullscreenChange);
     }
 
     var img = overlay.querySelector('.address-slideshow-img');
     var caption = overlay.querySelector('.address-slideshow-caption');
     var index = 0;
+
+    function onFullscreenChange() {
+      var inFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
+      if (!inFs && overlay.classList.contains('address-slideshow-active')) {
+        overlay.classList.remove('address-slideshow-active');
+        if (window._addressSlideshowTimer) {
+          clearInterval(window._addressSlideshowTimer);
+          window._addressSlideshowTimer = null;
+        }
+      }
+    }
 
     function showSlide(i) {
       index = (i + assetList.length) % assetList.length;
@@ -106,6 +123,10 @@
     }
 
     function stopSlideshow() {
+      var doc = document;
+      if (doc.fullscreenElement || doc.webkitFullscreenElement) {
+        (doc.exitFullscreen || doc.webkitExitFullscreen).call(doc).catch(function () {});
+      }
       overlay.classList.remove('address-slideshow-active');
       if (window._addressSlideshowTimer) {
         clearInterval(window._addressSlideshowTimer);
@@ -118,6 +139,11 @@
     window._addressSlideshowTimer = setInterval(function () {
       showSlide(index + 1);
     }, SLIDESHOW_DURATION_MS);
+    if (overlay.requestFullscreen) {
+      overlay.requestFullscreen().catch(function () {});
+    } else if (overlay.webkitRequestFullscreen) {
+      overlay.webkitRequestFullscreen();
+    }
   }
 
   function run() {
