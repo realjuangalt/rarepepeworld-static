@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
+  <script>(function(){var p=window.location.pathname;if(p.indexOf('/static-site')===0){document.write('<base href="/static-site/">');}})();</script>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>RARE PEPE WORLD</title>
@@ -32,7 +33,12 @@
   <content>
     <div id="card-list-section-base" class="container-fluid pb-4">
       <div id="card-list-subsection" class="container">
-        <h5 id="card-list-heading" class="p-2">Artist</h5>
+        <div class="d-flex align-items-center flex-wrap p-2">
+          <h5 id="card-list-heading" class="mb-0 mr-3">Artist</h5>
+          <button type="button" id="address-slideshow-btn" class="btn btn-outline-dark btn-sm d-none" title="Full screen slideshow — 21s per asset">
+            <i class="fa fa-expand"></i> Slideshow
+          </button>
+        </div>
         <div id="card-list-row" class="row"></div>
       </div>
     </div>
@@ -47,6 +53,7 @@
   </footer>
 
   <script src="js/pepe-image.js"></script>
+  <script src="js/slideshow.js"></script>
   <script src="js/artist.js"></script>
 </body>
 </html>

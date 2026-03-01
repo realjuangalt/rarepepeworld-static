@@ -65,117 +65,12 @@
             '<a href="' + href + '" class="link-undecorated"><img class="card-image rounded" data-asset="' + escapeHtml(name) + '" src="' + imgUrl + '" alt="' + escapeHtml(name) + '" onerror="tryNextPepeExt(this)"></a>' +
           '</div>' +
         '</div>' +
-        '<div class="sub-data text-center"><span id="card-line-1">' + escapeHtml(line1) + '</span></div>' +
+        '<div class="sub-data text-center">' +
+          '<button type="button" class="pepe-card-zoom-btn" aria-label="View full size" data-asset="' + escapeHtml(name) + '"><i class="fa fa-expand"></i></button>' +
+          '<span id="card-line-1">' + escapeHtml(line1) + '</span>' +
+        '</div>' +
       '</div>'
     );
-  }
-
-  var SLIDESHOW_DURATION_MS = 21000; // 21 seconds per asset
-
-  function startSlideshow(assetList) {
-    if (!assetList || !assetList.length) return;
-    if (window._addressSlideshowTimer) {
-      clearInterval(window._addressSlideshowTimer);
-      window._addressSlideshowTimer = null;
-    }
-    var overlay = document.getElementById('address-slideshow-overlay');
-    if (!overlay) {
-      overlay = document.createElement('div');
-      overlay.id = 'address-slideshow-overlay';
-      overlay.className = 'address-slideshow-overlay';
-      overlay.innerHTML =
-        '<button type="button" class="address-slideshow-exit" aria-label="Exit slideshow"><i class="fa fa-times"></i></button>' +
-        '<div class="address-slideshow-img-wrap"><img class="address-slideshow-img" src="" alt=""></div>' +
-        '<div class="address-slideshow-caption"></div>';
-      document.body.appendChild(overlay);
-
-      overlay.querySelector('.address-slideshow-exit').addEventListener('click', function (e) { e.stopPropagation(); if (overlay._stopSlideshow) overlay._stopSlideshow(); });
-      overlay.addEventListener('click', function (e) {
-        if (!overlay.classList.contains('address-slideshow-active')) return;
-        if (e.target.closest('.address-slideshow-exit')) return;
-        if (overlay._showExit) overlay._showExit();
-      });
-      overlay.addEventListener('dblclick', function (e) {
-        if (!overlay.classList.contains('address-slideshow-active')) return;
-        e.preventDefault();
-        if (overlay._stopSlideshow) overlay._stopSlideshow();
-      });
-      document.addEventListener('keydown', function onKey(e) {
-        if (e.key === 'Escape' && overlay.classList.contains('address-slideshow-active') && overlay._stopSlideshow) overlay._stopSlideshow();
-      });
-      document.addEventListener('fullscreenchange', onFullscreenChange);
-      document.addEventListener('webkitfullscreenchange', onFullscreenChange);
-    }
-
-    var exitBtn = overlay.querySelector('.address-slideshow-exit');
-    var img = overlay.querySelector('.address-slideshow-img');
-    var caption = overlay.querySelector('.address-slideshow-caption');
-    var index = 0;
-    var fadeTimer = null;
-    var FADE_DELAY_MS = 3000;
-
-    function scheduleFadeExit() {
-      if (fadeTimer) clearTimeout(fadeTimer);
-      fadeTimer = setTimeout(function () {
-        fadeTimer = null;
-        exitBtn.classList.add('address-slideshow-exit-faded');
-      }, FADE_DELAY_MS);
-    }
-    function showExit() {
-      exitBtn.classList.remove('address-slideshow-exit-faded');
-      scheduleFadeExit();
-    }
-    function clearFadeTimer() {
-      if (fadeTimer) clearTimeout(fadeTimer);
-      fadeTimer = null;
-      exitBtn.classList.remove('address-slideshow-exit-faded');
-    }
-
-    overlay._showExit = showExit;
-    overlay._stopSlideshow = stopSlideshow;
-
-    function onFullscreenChange() {
-      var inFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
-      if (!inFs && overlay.classList.contains('address-slideshow-active') && overlay._stopSlideshow) {
-        overlay._stopSlideshow();
-      }
-    }
-
-    function showSlide(i) {
-      index = (i + assetList.length) % assetList.length;
-      var a = assetList[index];
-      img.setAttribute('data-asset', a.name || '');
-      img.src = a.imgUrl || (typeof window.pepeImageUrlFirst === 'function' ? window.pepeImageUrlFirst(a.name) : '') || (window.pepeImagePlaceholder || '');
-      img.alt = a.name;
-      caption.textContent = a.name;
-      img.onerror = function () { (typeof window.tryNextPepeExt === 'function' ? window.tryNextPepeExt(img) : (img.src = window.pepeImagePlaceholder || '')); };
-    }
-
-    function stopSlideshow() {
-      clearFadeTimer();
-      var doc = document;
-      if (doc.fullscreenElement || doc.webkitFullscreenElement) {
-        (doc.exitFullscreen || doc.webkitExitFullscreen).call(doc).catch(function () {});
-      }
-      overlay.classList.remove('address-slideshow-active');
-      if (window._addressSlideshowTimer) {
-        clearInterval(window._addressSlideshowTimer);
-        window._addressSlideshowTimer = null;
-      }
-    }
-
-    showSlide(0);
-    overlay.classList.add('address-slideshow-active');
-    clearFadeTimer();
-    scheduleFadeExit();
-    window._addressSlideshowTimer = setInterval(function () {
-      showSlide(index + 1);
-    }, SLIDESHOW_DURATION_MS);
-    if (overlay.requestFullscreen) {
-      overlay.requestFullscreen().catch(function () {});
-    } else if (overlay.webkitRequestFullscreen) {
-      overlay.webkitRequestFullscreen();
-    }
   }
 
   function run() {
@@ -242,7 +137,7 @@
           }
           if (slideshowBtn && legible.length) {
             slideshowBtn.classList.remove('d-none');
-            slideshowBtn.onclick = function () { startSlideshow(legible); };
+            slideshowBtn.onclick = function () { window.startSlideshow(legible); };
           }
         });
       })

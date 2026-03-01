@@ -77,3 +77,36 @@
   opacity: 0;
   pointer-events: none;
 }
+
+/* Card zoom bubble — full-screen view of single card (used on grid cards site-wide) */
+.pepe-card-zoom-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  margin-right: 0.35rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.12);
+  color: #333;
+  cursor: pointer;
+  font-size: 0.7rem;
+  vertical-align: middle;
+  transition: background 0.2s, color 0.2s;
+}
+.pepe-card-zoom-btn:hover {
+  background: rgba(0, 0, 0, 0.2);
+  color: #111;
+}
+.sub-data {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 0;
+}
+.sub-data .pepe-card-zoom-btn {
+  flex-shrink: 0;
+}

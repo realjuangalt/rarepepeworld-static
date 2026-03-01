@@ -44,6 +44,7 @@
           '</div>' +
         '</div>' +
         '<div class="sub-data text-center">' +
+          '<button type="button" class="pepe-card-zoom-btn" aria-label="View full size" data-asset="' + deps.escapeHtml(name) + '"><i class="fa fa-expand"></i></button>' +
           '<span id="card-line-1"><a class="link-undecorated" href="' + href + '">' + deps.escapeHtml(line1) + '</a></span>' +
           ' | <span id="card-line-2"><a class="link-undecorated" href="' + href + '">' + deps.escapeHtml(line2) + '</a></span>' +
         '</div>' +
@@ -75,6 +76,8 @@
     if (frontLink) frontLink.href = href;
     var subData = cardEl.querySelector('.sub-data');
     if (subData) {
+      var zoomBtn = subData.querySelector('.pepe-card-zoom-btn');
+      if (zoomBtn) zoomBtn.setAttribute('data-asset', name);
       var linkEls = subData.querySelectorAll('a');
       if (linkEls[0]) { linkEls[0].href = href; linkEls[0].textContent = line1; }
       if (linkEls[1]) { linkEls[1].href = href; linkEls[1].textContent = line2; }

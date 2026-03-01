@@ -51,6 +51,7 @@
           '</div>' +
         '</div>' +
         '<div class="sub-data text-center">' +
+          '<button type="button" class="pepe-card-zoom-btn" aria-label="View full size" data-asset="' + escapeHtml(name) + '"><i class="fa fa-expand"></i></button>' +
           (line1 ? '<span id="card-line-1">' + escapeHtml(line1) + '</span>' : '') +
           (line2 ? ' | <span id="card-line-2">' + escapeHtml(line2) + '</span>' : '') +
         '</div>' +
@@ -114,6 +115,14 @@
             return renderCard(name, series, capStr !== '—' ? capStr : '—', {});
           });
           row.innerHTML = cards.join('');
+          var slideshowBtn = document.getElementById('address-slideshow-btn');
+          if (slideshowBtn && rareAssets.length) {
+            slideshowBtn.classList.remove('d-none');
+            var slideshowList = rareAssets.map(function (name) {
+              return { name: name, imgUrl: pepeImageUrl(name) };
+            });
+            slideshowBtn.onclick = function () { window.startSlideshow(slideshowList); };
+          }
         });
       })
       .catch(function (err) {

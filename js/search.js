@@ -63,6 +63,7 @@
           '</div>' +
         '</div>' +
         '<div class="sub-data text-center">' +
+          '<button type="button" class="pepe-card-zoom-btn" aria-label="View full size" data-asset="' + escapeHtml(name) + '"><i class="fa fa-expand"></i></button>' +
           (series ? '<span id="card-line-1">Series ' + series + '</span>' : '') +
           ' | <span id="card-line-2">' + escapeHtml(line2) + '</span>' +
         '</div>' +
