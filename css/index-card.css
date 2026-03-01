@@ -1,0 +1,208 @@
+/* Alternate home page — card-style layout for testing
+ * This file is only loaded by index-card.html and does not affect the existing index.html.
+ */
+
+.index-card-body {
+  position: relative;
+  min-height: 100vh;
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  background: radial-gradient(circle at top, #1c2733 0, #050910 45%, #020308 100%);
+  color: #f5f7fb;
+}
+
+.index-card-bg {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(circle at 10% 20%, rgba(127, 206, 101, 0.15) 0, transparent 55%),
+    radial-gradient(circle at 85% 80%, rgba(178, 230, 251, 0.18) 0, transparent 55%);
+  opacity: 0.9;
+  z-index: 0;
+}
+
+.index-card-shell {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 1200px;
+  padding: 1rem;
+  margin: 0 auto;
+}
+
+.index-card-inner {
+  background: radial-gradient(circle at 20% 0, rgba(255, 255, 255, 0.06), rgba(11, 19, 28, 0.98));
+  border-radius: 24px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 18px 60px rgba(0, 0, 0, 0.65),
+    0 0 0 1px rgba(255, 255, 255, 0.05);
+  padding: 1.75rem 1.75rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.75rem;
+}
+
+@media (max-width: 767px) {
+  .index-card-inner {
+    padding: 1.25rem 1.1rem 1.25rem;
+    border-radius: 18px;
+  }
+}
+
+.index-card-header {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  padding-bottom: 1.25rem;
+}
+
+.index-card-title-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.index-card-logo img {
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.4);
+}
+
+.index-card-title-text h1 {
+  font-size: clamp(1.25rem, 3.2vw, 1.8rem);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  margin: 0;
+}
+
+.index-card-title-text p {
+  margin: 0.25rem 0 0;
+  font-size: 0.9rem;
+  color: rgba(238, 244, 255, 0.8);
+}
+
+.index-card-search {
+  max-width: 360px;
+}
+
+.index-card-search .input-group {
+  background: rgba(4, 10, 18, 0.9);
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55);
+}
+
+.index-card-search #search-input {
+  background: transparent;
+  border: none;
+  color: #f5f7fb;
+  font-weight: 500;
+}
+
+.index-card-search #search-input::placeholder {
+  color: rgba(202, 216, 238, 0.7);
+}
+
+.index-card-search .input-group-text {
+  background: linear-gradient(135deg, #7FCE65, #B2E6FB);
+  border-radius: 999px;
+  border: none;
+  color: #051018;
+  font-weight: 600;
+}
+
+.index-card-search .input-group-text i.fa-search {
+  color: inherit;
+}
+
+.index-card-section {
+  padding: 0.75rem 0 0.25rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.index-card-section:last-of-type {
+  border-bottom: none;
+}
+
+.index-card-section-heading-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.65rem;
+}
+
+.index-card-section-heading {
+  font-size: 0.95rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(233, 244, 255, 0.85);
+  margin: 0;
+}
+
+.index-card-section-link {
+  color: rgba(178, 230, 251, 0.9);
+}
+
+.index-card-section-link:hover {
+  color: #ffffff;
+  text-decoration: underline;
+}
+
+.index-card-section-subtitle {
+  color: rgba(199, 214, 240, 0.7);
+}
+
+.index-card-section .row {
+  margin-left: -0.4rem;
+  margin-right: -0.4rem;
+}
+
+.index-card-section .row > .col {
+  padding-left: 0.4rem;
+  padding-right: 0.4rem;
+}
+
+.index-card-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding-top: 0.75rem;
+  font-size: 0.8rem;
+  color: rgba(214, 225, 244, 0.85);
+}
+
+.index-card-footer-links span {
+  margin: 0 0.35rem;
+}
+
+.index-card-footer-meta {
+  display: flex;
+  gap: 0.35rem;
+}
+
+.index-card-footer-social a {
+  color: rgba(214, 225, 244, 0.9);
+}
+
+.index-card-footer-social a:hover {
+  color: #ffffff;
+}
+
+@media (max-width: 767px) {
+  .index-card-title-row {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .index-card-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+

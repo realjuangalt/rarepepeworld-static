@@ -121,14 +121,18 @@
       var assetMetadata = results[1] || {};
       var all = deps.flattenSeries(seriesData);
       if (!all.length) return;
-      var random = deps.randomSample(all, 6);
+      var random = deps.randomSample(all, 3);
 
       var cardData = [];
       for (var i = 0; i < random.length; i++) {
-        var asset = random[i];
-        var name = asset.name || asset;
+        var name = random[i].name || random[i];
+        var seriesMeta = assetMetadata[name] && assetMetadata[name].series;
         var capStr = deps.getCapDisplay(assetMetadata, name);
-        cardData.push({ asset: asset, name: name, capStr: capStr });
+        cardData.push({
+          asset: { name: name, series: seriesMeta != null ? seriesMeta : '—' },
+          name: name,
+          capStr: capStr
+        });
       }
 
       function applyInstant() {
@@ -192,11 +196,18 @@
     if (!deps) return '';
     var all = deps.flattenSeries(seriesData);
     if (!all.length) return '';
-    var random = deps.randomSample(all, 6);
+    var random = deps.randomSample(all, 3);
     return random.map(function (a) {
       var name = a.name || a;
+      var seriesMeta = assetMetadata[name] && assetMetadata[name].series;
       var capStr = deps.getCapDisplay(assetMetadata, name);
-      return renderGridCard(a, links || {}, capStr, 'Series ' + (a.series || '—'));
+      var seriesVal = seriesMeta != null ? seriesMeta : '—';
+      return renderGridCard(
+        { name: name, series: seriesVal },
+        links || {},
+        capStr,
+        'Series ' + seriesVal
+      );
     }).join('');
   }
 

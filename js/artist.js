@@ -81,7 +81,8 @@
         var assets = [];
         var seen = {};
         (issuances || []).forEach(function (i) {
-          var name = i.asset || i.get_asset;
+          var rawName = i.asset || i.get_asset;
+          var name = (rawName || '').toUpperCase();
           if (name && !seen[name]) { seen[name] = true; assets.push(name); }
         });
         if (!assets.length) {
@@ -100,9 +101,17 @@
               (seriesData[num] || []).forEach(function (n) { seriesMap[n] = num; });
             });
           }
-          var cards = assets.map(function (name) {
+          // Filter to assets that are actually Rare Pepes in our catalog.
+          var rareAssets = assets.filter(function (name) { return !!assetMetadata[name]; });
+          if (!rareAssets.length) {
+            row.innerHTML = '<p class="col-12 text-muted">This address has no issued Rare Pepe assets.</p>';
+            return;
+          }
+          var cards = rareAssets.map(function (name) {
+            var meta = assetMetadata[name] || {};
+            var series = meta.series != null && meta.series !== '' ? meta.series : (seriesMap[name] || '—');
             var capStr = getCapDisplay(assetMetadata, name);
-            return renderCard(name, seriesMap[name] || '—', capStr !== '—' ? capStr : '—', {});
+            return renderCard(name, series, capStr !== '—' ? capStr : '—', {});
           });
           row.innerHTML = cards.join('');
         });

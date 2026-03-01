@@ -1,6 +1,6 @@
 /**
  * Address page — holdings from API (Owns X of Y); Y = supply from data/asset_metadata.json.
- * Only "legible" Rare Pepe assets (named, not numeric IDs) are shown in the grid.
+ * Only assets that exist in the Rare Pepe catalog (asset_metadata.json) are shown in the grid.
  */
 (function () {
   'use strict';
@@ -154,8 +154,10 @@
           var legible = [];
           var otherCount = 0;
           assets.forEach(function (a) {
-            var name = a.asset || a.name || '—';
-            if (!isLegibleRarePepe(name)) {
+            var rawName = a.asset || a.name || '—';
+            var name = (rawName || '').toUpperCase();
+            // Filter: must both look like a proper Rare Pepe name and exist in our catalog.
+            if (!isLegibleRarePepe(name) || !assetMetadata[name]) {
               otherCount++;
               return;
             }

@@ -1,22 +1,27 @@
 #!/usr/bin/env python3
 """
-Archive Rare Pepe Directory (RPD): download every asset, keep asset names and
-series (season) data, and clone the site for historical/archival use.
+Archive Rare Pepe Directory (RPD): keep asset names, series (season), and links.
+Optionally clone the site and download images (e.g. for a full rebuild).
 
 Usage:
-  python archive_rpd.py [--out-dir PATH] [--delay SEC] [--no-clone] [--no-images]
-  --out-dir   Base output dir (default: ../archive relative to script)
-  --delay     Seconds between requests (default: 1.5)
-  --no-clone  Skip saving HTML clone
-  --no-images Skip downloading asset images
+  python archive_rpd.py [--out-dir PATH] [--delay SEC] [--series-only] [--no-clone] [--no-images]
 
-Output:
-  <out-dir>/rpd/rpd-index.json          Full per-asset metadata
+  --series-only  Only update series + links from listing pages (no per-asset fetch, no images).
+                 Use when you already have images and only need series data. Fast.
+  --out-dir      Base output dir (default: ../archive relative to script)
+  --delay        Seconds between requests (default: 1.5)
+  --no-clone     Skip saving HTML clone (full run only)
+  --no-images    Skip downloading asset images (full run only)
+
+Output (always):
   <out-dir>/rpd/RarePepeDirectory_Links.json
   <out-dir>/rpd/RarePepeDirectory_Series_Data.json
-  <out-dir>/rpd/site/                   Static clone (index, series-*, p/*.html)
-  <out-dir>/pepes/                      Downloaded images by asset name
-  Plus copies of Links + Series JSON into <out-dir>/../data/ for static site
+  Plus copies into <out-dir>/../data/ for the static site.
+
+Output (full run only, when not --series-only):
+  <out-dir>/rpd/rpd-index.json   Per-asset metadata
+  <out-dir>/rpd/site/             Static clone (index, series-*, p/*.html)
+  <out-dir>/pepes/               Downloaded images (only if not --no-images)
 """
 
 from __future__ import annotations
@@ -54,27 +59,63 @@ def soup(html: str):
 def discover_pepe_links_from_page(soup_page) -> list[tuple[str, str]]:
     """Returns list of (asset_name, href) for pepe links on this page. href is ?p=ID or full URL."""
     out = []
+    seen_p: set[str] = set()
     main = soup_page.find("div", id="main")
     if not main:
         return out
     # RPD: each post is in <article> or <section>; h2.entry-title has name, link with ?p= is sibling (not inside h2)
     for block in main.find_all(["article", "section"]):
         h2 = block.find("h2", class_="entry-title")
-        a = block.find("a", href=lambda h: h and "?p=" in h)
+        a = block.find("a", href=lambda h: h and "?p=" in str(h))
         if not a:
             continue
-        href = a["href"]
+        href = a.get("href", "")
         if not ("?p=" in href or (urlparse(href).query and "p=" in urlparse(href).query)):
+            continue
+        pid = re.search(r"p=(\d+)", href)
+        if pid and pid.group(1) in seen_p:
             continue
         if h2:
             name = (h2.get_text() or "").strip()
-            if name:
+            if name and pid:
+                seen_p.add(pid.group(1))
                 out.append((name, href))
                 continue
-        # Fallback: parse name from link text "ASSET NAME: X AMOUNT"
-        m = re.search(r"ASSET NAME:\s*(\S+)\s+AMOUNT", a.get_text() or "")
-        if m:
-            out.append((m.group(1), a["href"]))
+        # Fallback: parse name from link text "ASSET NAME: X AMOUNT" or "ASSETNAME: X"
+        text = (a.get_text() or "").strip()
+        m = re.search(r"ASSET\s*NAME:\s*([A-Za-z0-9]+)", text, re.I) or re.search(r"ASSETNAME:\s*([A-Za-z0-9]+)", text, re.I)
+        if m and pid:
+            seen_p.add(pid.group(1))
+            out.append((m.group(1).upper(), href))
+    # Category pages: links with ?p= and name from preceding heading or link text
+    for a in main.find_all("a", href=True):
+        href = a["href"]
+        if "p=" not in href and "p=" not in (urlparse(href).query or ""):
+            continue
+        pid = re.search(r"p=(\d+)", href)
+        if not pid or pid.group(1) in seen_p:
+            continue
+        name = None
+        node = a.find_previous_sibling()
+        if node and getattr(node, "name", None) in ("h1", "h2", "h3", "h4"):
+            name = (node.get_text() or "").strip()
+        if not name:
+            node = a.find_previous()
+            for _ in range(20):
+                if node is None:
+                    break
+                if getattr(node, "name", None) in ("h1", "h2", "h3", "h4"):
+                    name = (node.get_text() or "").strip()
+                    break
+                node = node.find_previous()
+        if not name:
+            text = (a.get_text() or "").strip()
+            m = re.search(r"ASSET\s*NAME:\s*([A-Za-z0-9]+)", text, re.I) or re.search(r"ASSETNAME:\s*([A-Za-z0-9]+)", text, re.I)
+            if m:
+                name = m.group(1).upper()
+        if name:
+            seen_p.add(pid.group(1))
+            out.append((name, href))
     return out
 
 
@@ -87,12 +128,51 @@ def discover_pagination_next(soup_page) -> str | None:
     return a["href"] if a else None
 
 
-def discover_all_pepes(session: requests.Session, delay: float) -> tuple[dict[str, str], dict[str, int]]:
+def discover_category_series_map(session: requests.Session, delay: float) -> dict[int, int]:
     """
-    Crawl homepage and all series pages; return (name_to_p, name_to_series).
+    RPD uses ?cat=ID for series (e.g. ?cat=6 = Series 1). Discover cat_id -> series_num.
+    """
+    cat_to_series: dict[int, int] = {}
+    r = get(BASE + "/", session)
+    r.raise_for_status()
+    s = soup(r.text)
+    cat_ids: set[int] = set()
+    for a in s.find_all("a", href=True):
+        m = re.search(r"[?&]cat=(\d+)", a["href"])
+        if m:
+            cat_ids.add(int(m.group(1)))
+    if not cat_ids:
+        # Fallback: probe ?cat=1 through ?cat=60 and parse title "Series N"
+        cat_ids = set(range(1, 61))
+    for cid in sorted(cat_ids):
+        time.sleep(delay)
+        try:
+            r = get(f"{BASE}/?cat={cid}", session)
+            if not r.ok:
+                continue
+            s = soup(r.text)
+            title_el = s.find("title")
+            if not title_el:
+                continue
+            t = (title_el.get_text() or "").strip()
+            m = re.search(r"Series\s+(\d+)", t, re.I)
+            if m:
+                series_num = int(m.group(1))
+                if 1 <= series_num <= 36:
+                    cat_to_series[cid] = series_num
+        except Exception:
+            continue
+    return cat_to_series
+
+
+def discover_all_pepes(session: requests.Session, delay: float) -> tuple[dict[str, str], dict[str, int], dict[str, str]]:
+    """
+    Crawl homepage and all series pages; return (name_to_p, name_to_series, name_to_url).
+    RPD uses ?cat=ID for series (not /series-N/).
     """
     name_to_p: dict[str, str] = {}
     name_to_series: dict[str, int] = {}
+    name_to_url: dict[str, str] = {}
 
     def crawl_listing(url: str, series_num: int | None, label: str):
         page = 1
@@ -103,6 +183,7 @@ def discover_all_pepes(session: requests.Session, delay: float) -> tuple[dict[st
             s = soup(r.text)
             found = discover_pepe_links_from_page(s)
             for name, href in found:
+                full_url = urljoin(BASE, href)
                 parsed = urlparse(href)
                 q = parsed.query
                 if "p=" in q:
@@ -110,6 +191,7 @@ def discover_all_pepes(session: requests.Session, delay: float) -> tuple[dict[st
                     if pid:
                         p_id = pid.group(1)
                         name_to_p[name] = p_id
+                        name_to_url[name] = full_url
                         if series_num is not None:
                             name_to_series[name] = series_num
             print(f"  [{label}] Page {page}: {len(found)} links (total unique so far: {len(name_to_p)})", flush=True)
@@ -121,11 +203,13 @@ def discover_all_pepes(session: requests.Session, delay: float) -> tuple[dict[st
 
     print("  Homepage...", flush=True)
     crawl_listing(BASE + "/", None, "Homepage")
-    for n in SERIES_RANGE:
-        print(f"  Series {n}...", flush=True)
-        crawl_listing(f"{BASE}/series-{n}/", n, f"Series {n}")
+    print("  Discovering series categories (?cat=)...", flush=True)
+    cat_to_series = discover_category_series_map(session, delay)
+    for cid, series_num in sorted(cat_to_series.items(), key=lambda x: x[1]):
+        print(f"  Series {series_num} (cat={cid})...", flush=True)
+        crawl_listing(f"{BASE}/?cat={cid}", series_num, f"Series {series_num}")
 
-    return name_to_p, name_to_series
+    return name_to_p, name_to_series, name_to_url
 
 
 def parse_pepe_page(html: str, base_url: str) -> dict:
@@ -218,11 +302,12 @@ def rewrite_links_for_clone(html: str, base: str, page_type: str, p_id: str | No
 
 
 def main():
-    ap = argparse.ArgumentParser(description="Archive Rare Pepe Directory (all assets + site clone)")
+    ap = argparse.ArgumentParser(description="Archive Rare Pepe Directory (series + links; optionally full clone)")
+    ap.add_argument("--series-only", action="store_true", help="Only update series + links from listing pages (no per-asset fetch, no images)")
     ap.add_argument("--out-dir", type=Path, default=None, help="Output base dir (default: ../archive)")
     ap.add_argument("--delay", type=float, default=DEFAULT_DELAY, help="Delay between requests (seconds)")
-    ap.add_argument("--no-clone", action="store_true", help="Do not save HTML clone")
-    ap.add_argument("--no-images", action="store_true", help="Do not download images")
+    ap.add_argument("--no-clone", action="store_true", help="Do not save HTML clone (full run only)")
+    ap.add_argument("--no-images", action="store_true", help="Do not download images (full run only)")
     args = ap.parse_args()
 
     script_dir = Path(__file__).resolve().parent
@@ -235,10 +320,37 @@ def main():
     session = requests.Session()
     session.headers["User-Agent"] = USER_AGENT
 
-    print("Discovering all pepe links from homepage and series 1–36...", flush=True)
-    name_to_p, name_to_series = discover_all_pepes(session, args.delay)
+    print("Discovering all pepe links from homepage and series categories...", flush=True)
+    name_to_p, name_to_series, name_to_url = discover_all_pepes(session, args.delay)
 
-    # Dedupe by p_id (same asset might appear on homepage and series)
+    # Build series_data from discovery (series number -> sorted list of asset names)
+    series_data: dict[str, list[str]] = {str(n): [] for n in SERIES_RANGE}
+    for name, series_num in name_to_series.items():
+        key = str(series_num)
+        if name not in series_data[key]:
+            series_data[key].append(name)
+    for k in series_data:
+        series_data[k] = sorted(series_data[k])
+
+    if args.series_only:
+        rpd_dir.mkdir(parents=True, exist_ok=True)
+        links = dict(sorted(name_to_url.items()))
+        (rpd_dir / "RarePepeDirectory_Links.json").write_text(
+            json.dumps(links, indent=2, sort_keys=True), encoding="utf-8"
+        )
+        (rpd_dir / "RarePepeDirectory_Series_Data.json").write_text(
+            json.dumps(series_data, indent=2, sort_keys=True), encoding="utf-8"
+        )
+        data_dir = data_dir.resolve()
+        if data_dir.exists():
+            import shutil
+            shutil.copy(rpd_dir / "RarePepeDirectory_Links.json", data_dir / "RarePepeDirectory_Links.json")
+            shutil.copy(rpd_dir / "RarePepeDirectory_Series_Data.json", data_dir / "RarePepeDirectory_Series_Data.json")
+            print(f"Copied Links + Series JSON to {data_dir}", flush=True)
+        print("Done (series-only). Run build_asset_metadata.py then build_series_from_metadata.py to update asset_metadata.", flush=True)
+        return
+
+    # Full run: dedupe by p_id and fetch each asset page
     p_to_name: dict[str, str] = {}
     for name, p_id in name_to_p.items():
         p_to_name[p_id] = name
@@ -247,13 +359,11 @@ def main():
     print(f"Discovery done: {total} unique assets ({len(name_to_series)} with series).", flush=True)
     print(f"Fetching each asset page (delay={args.delay}s)...", flush=True)
 
+    # Reset series_data; we'll refill from name_to_series during fetch (for rpd_index row["series"])
+    series_data = {str(n): [] for n in SERIES_RANGE}
+
     rpd_index = []
     links = {}
-    series_data: dict[str, list[str]] = {}
-
-    for series_num in SERIES_RANGE:
-        series_data[str(series_num)] = []
-
     start_time = time.time()
     sorted_items = sorted(p_to_name.items(), key=lambda x: int(x[0]))
     for idx, (p_id, asset_name) in enumerate(sorted_items, start=1):
