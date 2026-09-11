@@ -4,7 +4,7 @@
  * Bump CACHE_VERSION when shipping breaking asset URL changes.
  */
 /* eslint-disable no-restricted-globals */
-var CACHE_VERSION = 'v3';
+var CACHE_VERSION = 'v4';
 var PEPE_CACHE = 'rpw-pepes-' + CACHE_VERSION;
 var DATA_CACHE = 'rpw-data-' + CACHE_VERSION;
 var STATIC_CACHE = 'rpw-static-' + CACHE_VERSION;

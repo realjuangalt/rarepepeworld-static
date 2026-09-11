@@ -11,11 +11,83 @@
   <script src="https://use.fontawesome.com/e33d503066.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked@8.0.1/marked.min.js"></script>
   <style>
-    #bok-sidebar { max-height: 70vh; overflow-y: auto; }
-    #bok-sidebar .list-group-item { padding: 0.35rem 0.75rem; font-size: 0.9rem; }
-    #bok-sidebar .list-group-item.indent-1 { padding-left: 1.25rem; }
-    #bok-content .content-box { max-width: 100%; }
+    #bok-sidebar {
+      max-height: 70vh;
+      overflow-y: auto;
+      position: sticky;
+      top: 0.75rem;
+    }
+    #bok-nav .bok-nav-heading {
+      margin: 0.85rem 0.5rem 0.35rem;
+      padding-top: 0.5rem;
+      border-top: 1px solid rgba(0, 0, 0, 0.08);
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: #5a5a5a;
+    }
+    #bok-nav .bok-nav-heading:first-child {
+      margin-top: 0;
+      padding-top: 0;
+      border-top: 0;
+    }
+    #bok-sidebar .list-group-item {
+      padding: 0.35rem 0.75rem;
+      font-size: 0.9rem;
+      border-left: 3px solid transparent;
+    }
+    #bok-sidebar .list-group-item.indent-1 { padding-left: 1.35rem; font-size: 0.86rem; }
+    #bok-sidebar .list-group-item.indent-2 { padding-left: 2rem; font-size: 0.82rem; }
+    #bok-sidebar .list-group-item.active {
+      background: #eef6e8;
+      border-color: rgba(0, 0, 0, 0.125);
+      border-left-color: #3d8b37;
+      color: #1b1b1b;
+      font-weight: 600;
+    }
+    #bok-content .content-box {
+      max-width: 48rem;
+      line-height: 1.65;
+    }
+    #bok-content .content-box > :first-child { margin-top: 0; }
+    #bok-content .content-box h1 { font-size: 1.75rem; margin-bottom: 0.85rem; }
+    #bok-content .content-box h2 { font-size: 1.35rem; margin-top: 1.5rem; }
+    #bok-content .content-box h3 { font-size: 1.15rem; margin-top: 1.25rem; }
+    #bok-content .content-box img.bok-content-img,
+    #bok-content .content-box figure img {
+      display: block;
+      max-width: min(100%, 28rem);
+      height: auto;
+      margin: 0.75rem 0 1rem;
+      border-radius: 8px;
+    }
+    #bok-content .content-box figure {
+      margin: 1rem 0;
+    }
+    #bok-content .content-box figcaption {
+      font-size: 0.85rem;
+      color: #666;
+      margin-top: 0.35rem;
+    }
+    #bok-content .content-box blockquote {
+      border-left: 3px solid #3d8b37;
+      padding: 0.35rem 0.85rem;
+      margin: 1rem 0;
+      background: rgba(61, 139, 55, 0.06);
+      color: #333;
+    }
+    #bok-content .content-box .bok-broken-link {
+      color: inherit;
+      text-decoration: line-through;
+      opacity: 0.7;
+      cursor: default;
+    }
+    #bok-content .content-box img.bok-img-missing {
+      display: none;
+    }
     #bok-content a[href^="http"]:after { content: " \2197"; font-size: 0.7em; }
+    #bok-content a.bok-internal-link:after { content: none; }
   </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
@@ -39,9 +111,9 @@
           <div id="bok-nav-loading" class="text-muted small">Loading table of contents…</div>
           <div id="bok-nav" class="list-group d-none"></div>
           <div id="bok-nav-missing" class="d-none small text-muted mt-2">
-            <p>Book of Kek content not found. To display it here, run from the <code>static-site</code> folder:</p>
+            <p>Book of Kek content not found. To display it here, run from the site root:</p>
             <pre class="bg-light p-2 rounded small">./scripts/fetch_book_of_kek.sh</pre>
-            <p>Or clone <a href="https://github.com/thepepeinc/book-of-kek" target="_blank" rel="noopener">thepepeinc/book-of-kek</a> into <code>static-site/book-of-kek</code>.</p>
+            <p>Or clone <a href="https://github.com/thepepeinc/book-of-kek" target="_blank" rel="noopener">thepepeinc/book-of-kek</a> into <code>book-of-kek/</code>.</p>
           </div>
         </nav>
         <div id="bok-content" class="col-md-9 col-lg-10 order-1 order-md-2">
@@ -64,7 +136,7 @@
     </div>
   </footer>
 
-  <script src="js/book-of-kek.js"></script>
+  <script src="js/book-of-kek.js?v=4"></script>
   <script src="js/sw-register.js"></script>
 </body>
 </html>
