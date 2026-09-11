@@ -3,65 +3,62 @@
  * All styling for this effect lives here so changes elsewhere don’t break it.
  */
 
-.random-shuffle-heading {
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.35rem;
-  margin: 0;
-  padding: 0.35rem 0.95rem;
-  border: none;
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.5);
-  font-size: 1.35rem;
-  font-weight: 700;
-  line-height: 1.2;
-}
-
-.random-shuffle-heading:hover {
-  background: rgba(255, 255, 255, 0.75);
-}
-
 .random-pepe-controls {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 0.5rem;
+  margin-bottom: 0.5rem;
 }
 
-.random-slideshow-btn {
+/* Shared pill style: shuffle heading + fullscreen button */
+.random-pepe-controls .random-shuffle-heading,
+.random-pepe-controls .random-slideshow-btn,
+.random-pepe-pill {
+  -webkit-appearance: none;
+  appearance: none;
+  box-sizing: border-box;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
   margin: 0;
-  padding: 0.35rem 0.95rem;
-  border: none;
+  padding: 0.4rem 1rem;
+  border: 0;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.5);
-  color: inherit;
+  background: rgba(255, 255, 255, 0.55);
+  color: #212529;
   font-family: inherit;
-  font-size: 1rem;
-  font-weight: 600;
+  font-size: 1.25rem;
+  font-weight: 700;
   line-height: 1.2;
+  text-decoration: none;
   white-space: nowrap;
   transition: background 0.15s ease;
 }
 
-.random-slideshow-btn:hover {
-  background: rgba(255, 255, 255, 0.75);
+.random-pepe-controls .random-shuffle-heading:hover,
+.random-pepe-controls .random-slideshow-btn:hover,
+.random-pepe-pill:hover {
+  background: rgba(255, 255, 255, 0.8);
 }
 
-.random-slideshow-btn:focus {
-  outline: 2px solid rgba(0, 0, 0, 0.25);
+.random-pepe-controls .random-slideshow-btn:focus,
+.random-pepe-pill:focus {
+  outline: 2px solid rgba(0, 0, 0, 0.2);
   outline-offset: 2px;
 }
 
+/* Legacy class kept for JS that adds it */
+.random-shuffle-heading {
+  cursor: pointer;
+}
+
 /* Card-view home: same pill shape, softer on dark shell */
-.index-card-body .random-shuffle-heading,
-.index-card-body .random-slideshow-btn {
+.index-card-body .random-pepe-controls .random-shuffle-heading,
+.index-card-body .random-pepe-controls .random-slideshow-btn,
+.index-card-body .random-pepe-pill {
   font-size: 0.95rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -69,12 +66,13 @@
   background: rgba(255, 255, 255, 0.12);
 }
 
-.index-card-body .random-shuffle-heading:hover,
-.index-card-body .random-slideshow-btn:hover {
+.index-card-body .random-pepe-controls .random-shuffle-heading:hover,
+.index-card-body .random-pepe-controls .random-slideshow-btn:hover,
+.index-card-body .random-pepe-pill:hover {
   background: rgba(255, 255, 255, 0.22);
 }
 
-.index-card-body .random-slideshow-btn:focus {
+.index-card-body .random-pepe-controls .random-slideshow-btn:focus {
   outline-color: rgba(178, 230, 251, 0.6);
 }
 

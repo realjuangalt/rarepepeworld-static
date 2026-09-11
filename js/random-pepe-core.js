@@ -6,7 +6,8 @@
   'use strict';
 
   var catalogCache = null;
-  var catalogPromise = null;
+  var seriesDataCache = null;
+  var seriesPromise = null;
 
   function flattenSeriesNames(seriesData) {
     var list = [];
@@ -22,20 +23,28 @@
     return list;
   }
 
-  function loadCatalog() {
-    if (catalogCache) return Promise.resolve(catalogCache);
-    if (catalogPromise) return catalogPromise;
-    catalogPromise = fetch('data/RarePepeDirectory_Series_Data.json')
+  function loadSeriesData() {
+    if (seriesDataCache) return Promise.resolve(seriesDataCache);
+    if (seriesPromise) return seriesPromise;
+    seriesPromise = fetch('data/RarePepeDirectory_Series_Data.json')
       .then(function (r) { return r.ok ? r.json() : {}; })
       .then(function (seriesData) {
-        catalogCache = flattenSeriesNames(seriesData);
-        return catalogCache;
+        seriesDataCache = seriesData || {};
+        catalogCache = flattenSeriesNames(seriesDataCache);
+        return seriesDataCache;
       })
       .catch(function () {
+        seriesDataCache = {};
         catalogCache = [];
-        return catalogCache;
+        return seriesDataCache;
       });
-    return catalogPromise;
+    return seriesPromise;
+  }
+
+  function loadCatalog() {
+    return loadSeriesData().then(function () {
+      return catalogCache || [];
+    });
   }
 
   function randomIndex(length) {
@@ -105,6 +114,7 @@
 
   window.RandomPepeCore = {
     flattenSeriesNames: flattenSeriesNames,
+    loadSeriesData: loadSeriesData,
     loadCatalog: loadCatalog,
     randomIndex: randomIndex,
     pickRandomAsset: pickRandomAsset,
