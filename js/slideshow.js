@@ -4,8 +4,9 @@
  *   options.durationMs — default 21000 (sequence) or 15000 (random)
  *   options.mode — 'sequence' | 'random'
  *   options.preload — how many slides to warm ahead (random default 6)
+ *   options.history — how many prior slides to keep ready for back (random default 6)
  *   options.catalog — name[] for random mode (or load via RandomPepeCore)
- * startRandomSlideshow() — full Rare Pepe catalog, 15s, preload 6
+ * startRandomSlideshow() — full Rare Pepe catalog, 15s, 6 ahead + 6 behind
  */
 (function () {
   'use strict';
@@ -13,8 +14,22 @@
   var DEFAULT_SEQUENCE_MS = 21000;
   var DEFAULT_RANDOM_MS = 15000;
   var DEFAULT_RANDOM_PRELOAD = 6;
+  var DEFAULT_RANDOM_HISTORY = 6;
   var READY_WAIT_MS = 5000;
   var READY_POLL_MS = 200;
+
+  /* Session memory: working image URLs so back/forward does not re-probe. Not the full ~1GB set. */
+  var sessionUrlCache = Object.create(null);
+
+  function cacheUrl(name, url) {
+    if (!name || !url || String(url).indexOf('data:') === 0) return;
+    sessionUrlCache[String(name).toUpperCase()] = url;
+  }
+
+  function cachedUrl(name) {
+    if (!name) return '';
+    return sessionUrlCache[String(name).toUpperCase()] || '';
+  }
 
   /** Visible pepe area inside an object-fit:contain image box. */
   function getContainedImageRect(img) {
@@ -33,6 +48,8 @@
   }
 
   function imageUrlFor(name) {
+    var hit = cachedUrl(name);
+    if (hit) return hit;
     if (window.RandomPepeCore && window.RandomPepeCore.imageUrlFor) {
       return window.RandomPepeCore.imageUrlFor(name);
     }
@@ -53,13 +70,14 @@
 
   /** Preload one pepe; probes extensions and marks ready when a file loads or all fail. */
   function makeSlideItem(name, imgUrl, onReady) {
-    var url = imgUrl || imageUrlFor(name);
+    var url = imgUrl || cachedUrl(name) || imageUrlFor(name);
     var item = { name: name, imgUrl: url, ready: false, img: null };
     function markReady() {
       if (item.ready) return;
       item.ready = true;
       if (item.img && item.img.src && String(item.img.src).indexOf('data:') !== 0) {
         item.imgUrl = item.img.src;
+        cacheUrl(name, item.imgUrl);
       }
       if (typeof window.rememberPepeImageExt === 'function' && item.img) {
         window.rememberPepeImageExt(item.img);
@@ -164,6 +182,9 @@
     var preloadCount = options.preload != null
       ? options.preload
       : (mode === 'random' ? DEFAULT_RANDOM_PRELOAD : 1);
+    var historyCount = options.history != null
+      ? options.history
+      : (mode === 'random' ? DEFAULT_RANDOM_HISTORY : 0);
 
     var sequence = (assetList || []).map(function (a) {
       if (typeof a === 'string') return { name: a, imgUrl: imageUrlFor(a) };
@@ -279,13 +300,37 @@
       window._addressSlideshowTimer = setInterval(tickAdvance, durationMs);
     }
 
+    function trimFuture() {
+      while (future.length > preloadCount) future.pop();
+    }
+
+    function trimPast() {
+      while (past.length > historyCount) past.shift();
+    }
+
+    function syncItemFromDisplay(item) {
+      if (!item) return;
+      var src = img.currentSrc || img.src || '';
+      if (!src || String(src).indexOf('data:') === 0) return;
+      item.imgUrl = src;
+      item.ready = true;
+      if (item.img) item.img.src = src;
+      cacheUrl(item.name, src);
+      if (typeof window.rememberPepeImageExt === 'function') {
+        window.rememberPepeImageExt(img);
+      }
+    }
+
     function paintSlide(item) {
       if (!item) return;
       current = item;
+      var src = item.imgUrl || (item.img && item.img.src) || cachedUrl(item.name) || imageUrlFor(item.name) || (window.pepeImagePlaceholder || '');
       img.setAttribute('data-asset', item.name || '');
-      img.src = (item.img && item.img.src) || item.imgUrl || imageUrlFor(item.name) || (window.pepeImagePlaceholder || '');
       img.alt = item.name || '';
       caption.textContent = item.name || '';
+      img.onload = function () {
+        syncItemFromDisplay(item);
+      };
       img.onerror = function () {
         if (typeof window.tryNextPepeExt === 'function') {
           window.tryNextPepeExt(img);
@@ -293,6 +338,12 @@
           img.src = window.pepeImagePlaceholder || '';
         }
       };
+      /* Reuse known URL — browser/SW cache should hit; keep Image() refs in past/future. */
+      if (img.src !== src) {
+        img.src = src;
+      } else {
+        syncItemFromDisplay(item);
+      }
       fillFuture();
     }
 
@@ -301,7 +352,7 @@
       if (i < 0 || i >= sequence.length) return;
       index = i;
       var a = sequence[index];
-      paintSlide(makeSlideItem(a.name, a.imgUrl));
+      paintSlide(makeSlideItem(a.name, a.imgUrl || cachedUrl(a.name)));
       if (preloadCount > 0 && index + 1 < sequence.length) {
         makeSlideItem(sequence[index + 1].name, sequence[index + 1].imgUrl);
       }
@@ -310,7 +361,10 @@
     function goPrev() {
       if (mode === 'random') {
         if (!past.length) return;
-        if (current) future.unshift(current);
+        if (current) {
+          future.unshift(current);
+          trimFuture();
+        }
         paintSlide(past.pop());
         fillFuture();
         startAutoAdvance();
@@ -327,10 +381,12 @@
         if (!future.length) {
           var name = pickRandomName(catalog, recentNames());
           if (!name) return;
-          future.push(makeSlideItem(name, null, onPreloadReady));
+          future.push(makeSlideItem(name, cachedUrl(name) || null, onPreloadReady));
         }
-        if (current) past.push(current);
-        if (past.length > 50) past.shift();
+        if (current) {
+          past.push(current);
+          trimPast();
+        }
         paintSlide(future.shift());
         fillFuture();
         startAutoAdvance();
