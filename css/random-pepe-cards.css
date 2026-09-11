@@ -7,14 +7,15 @@
   display: flex;
   flex-wrap: wrap;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
-  margin-bottom: 0.5rem;
+  width: 100%;
+  margin-bottom: 0.75rem;
 }
 
-/* Shared pill style: shuffle heading + fullscreen button */
-.random-pepe-controls .random-shuffle-heading,
-.random-pepe-controls .random-slideshow-btn,
-.random-pepe-pill {
+/* Same pill for both — ID selectors beat Bootstrap h2 / button defaults */
+.random-pepe-controls > #latest-dispensers-section-heading,
+.random-pepe-controls > #random-slideshow-btn {
   -webkit-appearance: none;
   appearance: none;
   box-sizing: border-box;
@@ -24,28 +25,29 @@
   justify-content: center;
   gap: 0.35rem;
   margin: 0;
-  padding: 0.4rem 1rem;
+  padding: 0.45rem 1.1rem;
   border: 0;
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.55);
+  background: rgba(255, 255, 255, 0.72);
   color: #212529;
   font-family: inherit;
-  font-size: 1.25rem;
+  font-size: 1.1rem;
   font-weight: 700;
   line-height: 1.2;
+  letter-spacing: normal;
+  text-transform: none;
   text-decoration: none;
   white-space: nowrap;
   transition: background 0.15s ease;
 }
 
-.random-pepe-controls .random-shuffle-heading:hover,
-.random-pepe-controls .random-slideshow-btn:hover,
-.random-pepe-pill:hover {
-  background: rgba(255, 255, 255, 0.8);
+.random-pepe-controls > #latest-dispensers-section-heading:hover,
+.random-pepe-controls > #random-slideshow-btn:hover {
+  background: rgba(255, 255, 255, 0.92);
 }
 
-.random-pepe-controls .random-slideshow-btn:focus,
-.random-pepe-pill:focus {
+.random-pepe-controls > #random-slideshow-btn:focus,
+.random-pepe-controls > #latest-dispensers-section-heading:focus {
   outline: 2px solid rgba(0, 0, 0, 0.2);
   outline-offset: 2px;
 }
@@ -56,23 +58,25 @@
 }
 
 /* Card-view home: same pill shape, softer on dark shell */
-.index-card-body .random-pepe-controls .random-shuffle-heading,
-.index-card-body .random-pepe-controls .random-slideshow-btn,
-.index-card-body .random-pepe-pill {
+.index-card-body .random-pepe-controls {
+  justify-content: center;
+}
+
+.index-card-body .random-pepe-controls > #latest-dispensers-section-heading,
+.index-card-body .random-pepe-controls > #random-slideshow-btn {
   font-size: 0.95rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
   color: rgba(233, 244, 255, 0.9);
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.14);
 }
 
-.index-card-body .random-pepe-controls .random-shuffle-heading:hover,
-.index-card-body .random-pepe-controls .random-slideshow-btn:hover,
-.index-card-body .random-pepe-pill:hover {
-  background: rgba(255, 255, 255, 0.22);
+.index-card-body .random-pepe-controls > #latest-dispensers-section-heading:hover,
+.index-card-body .random-pepe-controls > #random-slideshow-btn:hover {
+  background: rgba(255, 255, 255, 0.24);
 }
 
-.index-card-body .random-pepe-controls .random-slideshow-btn:focus {
+.index-card-body .random-pepe-controls > #random-slideshow-btn:focus {
   outline-color: rgba(178, 230, 251, 0.6);
 }
 

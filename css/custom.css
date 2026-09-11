@@ -390,10 +390,11 @@ td, th { padding: 0.5rem 0.6rem; border: 1px solid #ccc; }
 
 /* ----- Section headings ----- */
 #featured-section-heading,
-#latest-dispensers-section-heading,
 #card-list-heading {
   font-size: clamp(1rem, 3vw, 1.25rem);
 }
+
+/* Random Pepes pill heading size is set in random-pepe-cards.css */
 
 /* ----- Tablet: more columns ----- */
 @media (min-width: 576px) {
