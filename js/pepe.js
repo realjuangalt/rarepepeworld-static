@@ -21,65 +21,18 @@
     return (p.get('asset') || '').trim().toUpperCase();
   }
 
-  var pepeCatalogCache = null;
-  var pepeCatalogPromise = null;
-
-  function flattenSeriesNames(seriesData) {
-    var list = [];
-    if (!seriesData || typeof seriesData !== 'object') return list;
-    Object.keys(seriesData).forEach(function (seriesNum) {
-      if (seriesNum === '_meta') return;
-      var names = seriesData[seriesNum];
-      if (!Array.isArray(names)) return;
-      names.forEach(function (name) {
-        if (name) list.push(String(name).toUpperCase());
-      });
-    });
-    return list;
-  }
-
   function loadPepeCatalog() {
-    if (pepeCatalogCache) return Promise.resolve(pepeCatalogCache);
-    if (pepeCatalogPromise) return pepeCatalogPromise;
-    pepeCatalogPromise = fetch('data/RarePepeDirectory_Series_Data.json')
-      .then(function (r) { return r.ok ? r.json() : {}; })
-      .then(function (seriesData) {
-        pepeCatalogCache = flattenSeriesNames(seriesData);
-        return pepeCatalogCache;
-      })
-      .catch(function () {
-        pepeCatalogCache = [];
-        return pepeCatalogCache;
-      });
-    return pepeCatalogPromise;
-  }
-
-  /** Uniform index via browser CSPRNG (reject excess to avoid modulo bias). */
-  function randomIndex(length) {
-    if (length <= 0) return 0;
-    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
-      var max = 0x100000000;
-      var limit = max - (max % length);
-      var buf = new Uint32Array(1);
-      var value;
-      do {
-        crypto.getRandomValues(buf);
-        value = buf[0];
-      } while (value >= limit);
-      return value % length;
+    if (window.RandomPepeCore && window.RandomPepeCore.loadCatalog) {
+      return window.RandomPepeCore.loadCatalog();
     }
-    return Math.floor(Math.random() * length);
+    return Promise.resolve([]);
   }
 
   function pickRandomAsset(names, excludeName) {
-    if (!names || !names.length) return null;
-    var exclude = (excludeName || '').toUpperCase();
-    var pool = names;
-    if (exclude && names.length > 1) {
-      pool = names.filter(function (n) { return n !== exclude; });
-      if (!pool.length) pool = names;
+    if (window.RandomPepeCore && window.RandomPepeCore.pickRandomAsset) {
+      return window.RandomPepeCore.pickRandomAsset(names, excludeName);
     }
-    return pool[randomIndex(pool.length)];
+    return null;
   }
 
   function navigateToPepe(asset) {
@@ -88,10 +41,54 @@
   }
 
   function setDiceBusy(busy) {
-    var btn = document.getElementById('pepe-dice-btn');
-    if (!btn) return;
-    btn.disabled = !!busy;
-    btn.setAttribute('aria-busy', busy ? 'true' : 'false');
+    ['pepe-dice-btn', 'pepe-lightbox-dice'].forEach(function (id) {
+      var btn = document.getElementById(id);
+      if (!btn) return;
+      btn.disabled = !!busy;
+      btn.setAttribute('aria-busy', busy ? 'true' : 'false');
+    });
+  }
+
+  /** Stay on detail page: update URL and reload pepe; keep lightbox open if requested. */
+  function softNavigateToPepe(asset, openLightbox) {
+    if (!asset) return;
+    history.replaceState(null, '', 'pepe.html?asset=' + encodeURIComponent(asset));
+    document.title = asset + ' — RARE PEPE WORLD';
+    if (openLightbox) {
+      var lb = document.getElementById('pepe-lightbox');
+      if (lb) {
+        lb.setAttribute('aria-hidden', 'false');
+        lb.classList.add('pepe-lightbox-open');
+      }
+    }
+    run(asset);
+  }
+
+  function goRandomPepe(opts) {
+    opts = opts || {};
+    setDiceBusy(true);
+    loadPepeCatalog().then(function (names) {
+      if (!names.length) {
+        setDiceBusy(false);
+        if (typeof window.rpwWarn === 'function') {
+          window.rpwWarn('pepe.js: dice catalog empty', { url: window.location.href });
+        }
+        return;
+      }
+      var next = pickRandomAsset(names, getAssetFromQuery());
+      if (!next) {
+        setDiceBusy(false);
+        return;
+      }
+      if (opts.soft) {
+        softNavigateToPepe(next, !!opts.keepLightbox);
+        setDiceBusy(false);
+        return;
+      }
+      navigateToPepe(next);
+    }).catch(function () {
+      setDiceBusy(false);
+    });
   }
 
   function initDiceButton() {
@@ -99,24 +96,18 @@
     if (!btn) return;
     btn.addEventListener('click', function () {
       if (btn.disabled) return;
-      setDiceBusy(true);
-      loadPepeCatalog().then(function (names) {
-        if (!names.length) {
-          setDiceBusy(false);
-          if (typeof window.rpwWarn === 'function') {
-            window.rpwWarn('pepe.js: dice catalog empty', { url: window.location.href });
-          }
-          return;
-        }
-        var next = pickRandomAsset(names, getAssetFromQuery());
-        if (!next) {
-          setDiceBusy(false);
-          return;
-        }
-        navigateToPepe(next);
-      }).catch(function () {
-        setDiceBusy(false);
-      });
+      goRandomPepe({ soft: false });
+    });
+  }
+
+  function initLightboxDice() {
+    var btn = document.getElementById('pepe-lightbox-dice');
+    if (!btn) return;
+    btn.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      if (btn.disabled) return;
+      goRandomPepe({ soft: true, keepLightbox: true });
     });
   }
 
@@ -224,8 +215,8 @@
     return html;
   }
 
-  function run() {
-    var asset = getAssetFromQuery();
+  function run(assetOverride) {
+    var asset = (assetOverride || getAssetFromQuery() || '').toUpperCase();
     if (!asset) {
       setDiceBusy(true);
       loadPepeCatalog().then(function (names) {
@@ -249,6 +240,16 @@
     var imgEl = document.getElementById('pepe-image');
     var linkEl = document.getElementById('pepe-image-link');
     tryPepeImage(imgEl, linkEl, asset);
+
+    var lbImg = document.getElementById('pepe-lightbox-img');
+    if (lbImg && document.getElementById('pepe-lightbox') &&
+        document.getElementById('pepe-lightbox').classList.contains('pepe-lightbox-open')) {
+      tryPepeImage(lbImg, null, asset);
+      lbImg.alt = asset;
+      lbImg.setAttribute('data-asset', asset);
+      var lbOpenTab = document.getElementById('pepe-lightbox-open-tab');
+      if (lbOpenTab) lbOpenTab.href = 'pepe.html?asset=' + encodeURIComponent(asset);
+    }
 
     Promise.all([
       fetch('data/RarePepeDirectory_Links.json').then(function (r) { return r.ok ? r.json() : {}; }).catch(function () { return {}; }),
@@ -436,7 +437,10 @@
       e.preventDefault();
       var src = img.src || (img.currentSrc && img.currentSrc);
       if (!src || String(src).indexOf('data:') === 0) return;
+      var asset = getAssetFromQuery();
+      lbImg.setAttribute('data-asset', asset || '');
       lbImg.src = src;
+      lbImg.alt = asset || '';
       if (lbOpenTab) lbOpenTab.href = src;
       lb.setAttribute('aria-hidden', 'false');
       lb.classList.add('pepe-lightbox-open');
@@ -455,11 +459,13 @@
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function () {
       initDiceButton();
+      initLightboxDice();
       run();
       initPepeLightbox();
     });
   } else {
     initDiceButton();
+    initLightboxDice();
     run();
     initPepeLightbox();
   }

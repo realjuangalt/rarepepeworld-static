@@ -123,6 +123,15 @@
       if (featuredRow && featured.length) {
         featuredRow.innerHTML = featured.map(function (a) { return renderFeaturedCard(a, links); }).join('');
       }
+
+      var randomSlideshowBtn = document.getElementById('random-slideshow-btn');
+      if (randomSlideshowBtn) {
+        randomSlideshowBtn.addEventListener('click', function () {
+          if (typeof window.startRandomSlideshow === 'function') {
+            window.startRandomSlideshow();
+          }
+        });
+      }
     }).catch(function (err) {
       if (typeof window.rpwWarn === 'function') {
         window.rpwWarn('Index: failed to load data', { error: String(err && err.message || err), url: window.location.href });

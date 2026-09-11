@@ -51,7 +51,12 @@
       <section class="index-card-section">
         <div class="index-card-section-heading-row">
           <h2 id="latest-dispensers-section-heading" class="index-card-section-heading">🎲 Random Pepes</h2>
-          <span class="index-card-section-subtitle small text-muted">Click the title to reshuffle</span>
+          <div class="d-flex align-items-center flex-wrap" style="gap:0.5rem">
+            <span class="index-card-section-subtitle small text-muted">Click the title to reshuffle</span>
+            <button type="button" id="random-slideshow-btn" class="btn btn-outline-dark btn-sm random-slideshow-btn" title="Fullscreen random pepe slideshow — 10s per card">
+              Fullscreen random
+            </button>
+          </div>
         </div>
         <div id="latest-dispensers-section-row" class="row justify-content-center"></div>
       </section>
@@ -79,6 +84,7 @@
   </main>
 
   <script src="js/pepe-image.js"></script>
+  <script src="js/random-pepe-core.js"></script>
   <script src="js/slideshow.js"></script>
   <script src="js/random-pepe-cards.js"></script>
   <script src="js/app.js"></script>
