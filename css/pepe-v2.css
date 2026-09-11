@@ -43,6 +43,57 @@
   padding-right: var(--pepe-v2-space);
 }
 
+/* ---------- Dice: random pepe under header ---------- */
+.pepe-v2 .pepe-dice-bar {
+  padding: 0.75rem var(--pepe-v2-space) 0;
+}
+
+.pepe-v2 .pepe-dice-bar-inner {
+  max-width: var(--pepe-v2-max);
+  margin: 0 auto;
+  display: flex;
+  justify-content: flex-end;
+  padding-left: var(--pepe-v2-space);
+  padding-right: var(--pepe-v2-space);
+}
+
+.pepe-v2 .pepe-dice-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: var(--pepe-v2-cream);
+  box-shadow: var(--pepe-v2-shadow-sm);
+  font-size: 1.35rem;
+  line-height: 1;
+  cursor: pointer;
+  transition: transform 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+
+.pepe-v2 .pepe-dice-btn:hover:not(:disabled) {
+  background: #fff;
+  box-shadow: var(--pepe-v2-shadow);
+  transform: scale(1.06);
+}
+
+.pepe-v2 .pepe-dice-btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+
+.pepe-v2 .pepe-dice-btn:focus {
+  outline: 2px solid var(--pepe-v2-green);
+  outline-offset: 2px;
+}
+
+.pepe-v2 .pepe-dice-btn:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
 /* ---------- Loading state ---------- */
 .pepe-v2 #pepe-loading {
   text-align: center;

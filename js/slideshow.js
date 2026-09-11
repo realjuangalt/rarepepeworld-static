@@ -7,6 +7,22 @@
 
   var SLIDESHOW_DURATION_MS = 21000;
 
+  /** Visible pepe area inside an object-fit:contain image box. */
+  function getContainedImageRect(img) {
+    var br = img.getBoundingClientRect();
+    var nw = img.naturalWidth || 0;
+    var nh = img.naturalHeight || 0;
+    if (!nw || !nh || !br.width || !br.height) {
+      return { left: br.left, top: br.top, right: br.right, bottom: br.bottom, width: br.width, height: br.height };
+    }
+    var scale = Math.min(br.width / nw, br.height / nh);
+    var w = nw * scale;
+    var h = nh * scale;
+    var left = br.left + (br.width - w) / 2;
+    var top = br.top + (br.height - h) / 2;
+    return { left: left, top: top, width: w, height: h, right: left + w, bottom: top + h };
+  }
+
   function startSlideshow(assetList) {
     if (!assetList || !assetList.length) return;
     if (window._addressSlideshowTimer) {
@@ -28,6 +44,24 @@
       overlay.addEventListener('click', function (e) {
         if (!overlay.classList.contains('address-slideshow-active')) return;
         if (e.target.closest('.address-slideshow-exit')) return;
+        var cardImg = overlay.querySelector('.address-slideshow-img');
+        if (cardImg && (e.target === cardImg || cardImg.contains(e.target))) {
+          var cardRect = getContainedImageRect(cardImg);
+          if (
+            cardRect.width > 0 &&
+            e.clientX >= cardRect.left &&
+            e.clientX <= cardRect.right &&
+            e.clientY >= cardRect.top &&
+            e.clientY <= cardRect.bottom
+          ) {
+            var mid = cardRect.left + cardRect.width / 2;
+            if (e.clientX < mid) {
+              if (overlay._goPrev) overlay._goPrev();
+            } else {
+              if (overlay._goNext) overlay._goNext();
+            }
+          }
+        }
         if (overlay._showExit) overlay._showExit();
       });
       overlay.addEventListener('dblclick', function (e) {
@@ -66,8 +100,21 @@
       exitBtn.classList.remove('address-slideshow-exit-faded');
     }
 
-    overlay._showExit = showExit;
-    overlay._stopSlideshow = stopSlideshow;
+    function clearAutoAdvance() {
+      if (window._addressSlideshowTimer) {
+        clearInterval(window._addressSlideshowTimer);
+        window._addressSlideshowTimer = null;
+      }
+    }
+
+    function startAutoAdvance() {
+      clearAutoAdvance();
+      if (assetList.length <= 1) return;
+      window._addressSlideshowTimer = setInterval(function () {
+        var nextIndex = (index + 1) % assetList.length;
+        showSlide(nextIndex);
+      }, SLIDESHOW_DURATION_MS);
+    }
 
     function onFullscreenChange() {
       var inFs = !!(document.fullscreenElement || document.webkitFullscreenElement);
@@ -77,13 +124,28 @@
     }
 
     function showSlide(i) {
-      index = (i + assetList.length) % assetList.length;
+      if (!assetList.length) return;
+      if (i < 0 || i >= assetList.length) return;
+      index = i;
       var a = assetList[index];
+      if (!a) return;
       img.setAttribute('data-asset', a.name || '');
       img.src = a.imgUrl || (typeof window.pepeImageUrlFirst === 'function' ? window.pepeImageUrlFirst(a.name) : '') || (window.pepeImagePlaceholder || '');
-      img.alt = a.name;
-      caption.textContent = a.name;
+      img.alt = a.name || '';
+      caption.textContent = a.name || '';
       img.onerror = function () { (typeof window.tryNextPepeExt === 'function' ? window.tryNextPepeExt(img) : (img.src = window.pepeImagePlaceholder || '')); };
+    }
+
+    function goPrev() {
+      if (index <= 0) return;
+      showSlide(index - 1);
+      startAutoAdvance();
+    }
+
+    function goNext() {
+      if (index >= assetList.length - 1) return;
+      showSlide(index + 1);
+      startAutoAdvance();
     }
 
     function stopSlideshow() {
@@ -93,22 +155,19 @@
         (doc.exitFullscreen || doc.webkitExitFullscreen).call(doc).catch(function () {});
       }
       overlay.classList.remove('address-slideshow-active');
-      if (window._addressSlideshowTimer) {
-        clearInterval(window._addressSlideshowTimer);
-        window._addressSlideshowTimer = null;
-      }
+      clearAutoAdvance();
     }
+
+    overlay._showExit = showExit;
+    overlay._stopSlideshow = stopSlideshow;
+    overlay._goPrev = goPrev;
+    overlay._goNext = goNext;
 
     showSlide(0);
     overlay.classList.add('address-slideshow-active');
     clearFadeTimer();
     scheduleFadeExit();
-    if (assetList.length > 1) {
-      window._addressSlideshowTimer = setInterval(function () {
-        var nextIndex = (index + 1) % assetList.length;
-        showSlide(nextIndex);
-      }, SLIDESHOW_DURATION_MS);
-    }
+    startAutoAdvance();
     if (overlay.requestFullscreen) {
       overlay.requestFullscreen().catch(function () {});
     } else if (overlay.webkitRequestFullscreen) {

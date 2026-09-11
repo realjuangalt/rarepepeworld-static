@@ -21,6 +21,105 @@
     return (p.get('asset') || '').trim().toUpperCase();
   }
 
+  var pepeCatalogCache = null;
+  var pepeCatalogPromise = null;
+
+  function flattenSeriesNames(seriesData) {
+    var list = [];
+    if (!seriesData || typeof seriesData !== 'object') return list;
+    Object.keys(seriesData).forEach(function (seriesNum) {
+      if (seriesNum === '_meta') return;
+      var names = seriesData[seriesNum];
+      if (!Array.isArray(names)) return;
+      names.forEach(function (name) {
+        if (name) list.push(String(name).toUpperCase());
+      });
+    });
+    return list;
+  }
+
+  function loadPepeCatalog() {
+    if (pepeCatalogCache) return Promise.resolve(pepeCatalogCache);
+    if (pepeCatalogPromise) return pepeCatalogPromise;
+    pepeCatalogPromise = fetch('data/RarePepeDirectory_Series_Data.json')
+      .then(function (r) { return r.ok ? r.json() : {}; })
+      .then(function (seriesData) {
+        pepeCatalogCache = flattenSeriesNames(seriesData);
+        return pepeCatalogCache;
+      })
+      .catch(function () {
+        pepeCatalogCache = [];
+        return pepeCatalogCache;
+      });
+    return pepeCatalogPromise;
+  }
+
+  /** Uniform index via browser CSPRNG (reject excess to avoid modulo bias). */
+  function randomIndex(length) {
+    if (length <= 0) return 0;
+    if (typeof crypto !== 'undefined' && crypto.getRandomValues) {
+      var max = 0x100000000;
+      var limit = max - (max % length);
+      var buf = new Uint32Array(1);
+      var value;
+      do {
+        crypto.getRandomValues(buf);
+        value = buf[0];
+      } while (value >= limit);
+      return value % length;
+    }
+    return Math.floor(Math.random() * length);
+  }
+
+  function pickRandomAsset(names, excludeName) {
+    if (!names || !names.length) return null;
+    var exclude = (excludeName || '').toUpperCase();
+    var pool = names;
+    if (exclude && names.length > 1) {
+      pool = names.filter(function (n) { return n !== exclude; });
+      if (!pool.length) pool = names;
+    }
+    return pool[randomIndex(pool.length)];
+  }
+
+  function navigateToPepe(asset) {
+    if (!asset) return;
+    window.location.href = 'pepe.html?asset=' + encodeURIComponent(asset);
+  }
+
+  function setDiceBusy(busy) {
+    var btn = document.getElementById('pepe-dice-btn');
+    if (!btn) return;
+    btn.disabled = !!busy;
+    btn.setAttribute('aria-busy', busy ? 'true' : 'false');
+  }
+
+  function initDiceButton() {
+    var btn = document.getElementById('pepe-dice-btn');
+    if (!btn) return;
+    btn.addEventListener('click', function () {
+      if (btn.disabled) return;
+      setDiceBusy(true);
+      loadPepeCatalog().then(function (names) {
+        if (!names.length) {
+          setDiceBusy(false);
+          if (typeof window.rpwWarn === 'function') {
+            window.rpwWarn('pepe.js: dice catalog empty', { url: window.location.href });
+          }
+          return;
+        }
+        var next = pickRandomAsset(names, getAssetFromQuery());
+        if (!next) {
+          setDiceBusy(false);
+          return;
+        }
+        navigateToPepe(next);
+      }).catch(function () {
+        setDiceBusy(false);
+      });
+    });
+  }
+
   function escapeHtml(s) {
     if (!s) return '';
     var d = document.createElement('div'); d.textContent = s; return d.innerHTML;
@@ -128,7 +227,19 @@
   function run() {
     var asset = getAssetFromQuery();
     if (!asset) {
-      document.getElementById('pepe-loading').textContent = 'No asset specified. Use ?asset=NAME';
+      setDiceBusy(true);
+      loadPepeCatalog().then(function (names) {
+        var next = pickRandomAsset(names, null);
+        if (next) {
+          navigateToPepe(next);
+          return;
+        }
+        setDiceBusy(false);
+        document.getElementById('pepe-loading').textContent = 'No asset specified. Use ?asset=NAME';
+      }).catch(function () {
+        setDiceBusy(false);
+        document.getElementById('pepe-loading').textContent = 'No asset specified. Use ?asset=NAME';
+      });
       return;
     }
 
@@ -342,8 +453,13 @@
   }
 
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function () { run(); initPepeLightbox(); });
+    document.addEventListener('DOMContentLoaded', function () {
+      initDiceButton();
+      run();
+      initPepeLightbox();
+    });
   } else {
+    initDiceButton();
     run();
     initPepeLightbox();
   }
