@@ -9,17 +9,73 @@
   align-items: center;
   justify-content: center;
   gap: 0.35rem;
-  padding: 0.25rem 0.9rem;
+  margin: 0;
+  padding: 0.35rem 0.95rem;
+  border: none;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.5);
+  font-size: 1.35rem;
+  font-weight: 700;
+  line-height: 1.2;
 }
 
 .random-shuffle-heading:hover {
   background: rgba(255, 255, 255, 0.75);
 }
 
+.random-pepe-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
 .random-slideshow-btn {
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  margin: 0;
+  padding: 0.35rem 0.95rem;
+  border: none;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.5);
+  color: inherit;
+  font-family: inherit;
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.2;
   white-space: nowrap;
+  transition: background 0.15s ease;
+}
+
+.random-slideshow-btn:hover {
+  background: rgba(255, 255, 255, 0.75);
+}
+
+.random-slideshow-btn:focus {
+  outline: 2px solid rgba(0, 0, 0, 0.25);
+  outline-offset: 2px;
+}
+
+/* Card-view home: same pill shape, softer on dark shell */
+.index-card-body .random-shuffle-heading,
+.index-card-body .random-slideshow-btn {
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: rgba(233, 244, 255, 0.9);
+  background: rgba(255, 255, 255, 0.12);
+}
+
+.index-card-body .random-shuffle-heading:hover,
+.index-card-body .random-slideshow-btn:hover {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+.index-card-body .random-slideshow-btn:focus {
+  outline-color: rgba(178, 230, 251, 0.6);
 }
 
 /* Spin animation in three phases so we can swap faces only when card is edge-on */
