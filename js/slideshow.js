@@ -1,18 +1,20 @@
 /**
  * Full-screen slideshow for address/artist collections and full-catalog random mode.
  * startSlideshow(assetList, options?)
- *   options.durationMs — default 21000 (sequence) or 10000 (random)
+ *   options.durationMs — default 21000 (sequence) or 15000 (random)
  *   options.mode — 'sequence' | 'random'
- *   options.preload — how many slides to warm ahead (random default 3)
+ *   options.preload — how many slides to warm ahead (random default 6)
  *   options.catalog — name[] for random mode (or load via RandomPepeCore)
- * startRandomSlideshow() — full Rare Pepe catalog, 10s, preload 3
+ * startRandomSlideshow() — full Rare Pepe catalog, 15s, preload 6
  */
 (function () {
   'use strict';
 
   var DEFAULT_SEQUENCE_MS = 21000;
-  var DEFAULT_RANDOM_MS = 10000;
-  var DEFAULT_RANDOM_PRELOAD = 3;
+  var DEFAULT_RANDOM_MS = 15000;
+  var DEFAULT_RANDOM_PRELOAD = 6;
+  var READY_WAIT_MS = 5000;
+  var READY_POLL_MS = 200;
 
   /** Visible pepe area inside an object-fit:contain image box. */
   function getContainedImageRect(img) {
@@ -49,17 +51,40 @@
     return catalog[Math.floor(Math.random() * catalog.length)];
   }
 
-  function makeSlideItem(name, imgUrl) {
+  /** Preload one pepe; probes extensions and marks ready when a file loads or all fail. */
+  function makeSlideItem(name, imgUrl, onReady) {
     var url = imgUrl || imageUrlFor(name);
     var item = { name: name, imgUrl: url, ready: false, img: null };
+    function markReady() {
+      if (item.ready) return;
+      item.ready = true;
+      if (item.img && item.img.src && String(item.img.src).indexOf('data:') !== 0) {
+        item.imgUrl = item.img.src;
+      }
+      if (typeof window.rememberPepeImageExt === 'function' && item.img) {
+        window.rememberPepeImageExt(item.img);
+      }
+      if (typeof onReady === 'function') onReady(item);
+      if (typeof item.onReady === 'function') item.onReady(item);
+    }
     if (url && typeof Image !== 'undefined') {
       item.img = new Image();
-      item.img.onload = function () { item.ready = true; };
-      item.img.onerror = function () { item.ready = true; };
       item.img.setAttribute('data-asset', name || '');
+      item.img.onload = markReady;
+      item.img.onerror = function () {
+        if (typeof window.tryNextPepeExt === 'function') {
+          var before = item.img.src;
+          window.tryNextPepeExt(item.img);
+          if (!item.img.src || item.img.src === before || String(item.img.src).indexOf('data:') === 0) {
+            markReady();
+          }
+          return;
+        }
+        markReady();
+      };
       item.img.src = url;
     } else {
-      item.ready = true;
+      markReady();
     }
     return item;
   }
@@ -163,6 +188,7 @@
     var caption = overlay.querySelector('.address-slideshow-caption');
     var index = 0;
     var fadeTimer = null;
+    var readyWaitTimer = null;
     var FADE_DELAY_MS = 3000;
 
     /* Random mode: past stack + current + future queue */
@@ -187,24 +213,19 @@
       exitBtn.classList.remove('address-slideshow-exit-faded');
     }
 
+    function clearReadyWait() {
+      if (readyWaitTimer) {
+        clearInterval(readyWaitTimer);
+        readyWaitTimer = null;
+      }
+    }
+
     function clearAutoAdvance() {
+      clearReadyWait();
       if (window._addressSlideshowTimer) {
         clearInterval(window._addressSlideshowTimer);
         window._addressSlideshowTimer = null;
       }
-    }
-
-    function startAutoAdvance() {
-      clearAutoAdvance();
-      if (mode === 'sequence' && sequence.length <= 1) return;
-      if (mode === 'random' && catalog.length <= 1) return;
-      window._addressSlideshowTimer = setInterval(function () {
-        if (mode === 'random') {
-          goNext();
-        } else {
-          showSequenceSlide((index + 1) % sequence.length);
-        }
-      }, durationMs);
     }
 
     function recentNames() {
@@ -215,13 +236,47 @@
       return names;
     }
 
+    function onPreloadReady() {
+      fillFuture();
+    }
+
     function fillFuture() {
       if (mode !== 'random') return;
       while (future.length < preloadCount && catalog.length) {
         var name = pickRandomName(catalog, recentNames());
         if (!name) break;
-        future.push(makeSlideItem(name));
+        future.push(makeSlideItem(name, null, onPreloadReady));
       }
+    }
+
+    /** Auto-advance: for random, wait briefly if the next image is still downloading. */
+    function tickAdvance() {
+      if (mode !== 'random') {
+        showSequenceSlide((index + 1) % sequence.length);
+        return;
+      }
+      fillFuture();
+      if (future[0] && future[0].ready) {
+        goNext();
+        return;
+      }
+      clearReadyWait();
+      var waited = 0;
+      readyWaitTimer = setInterval(function () {
+        waited += READY_POLL_MS;
+        fillFuture();
+        if ((future[0] && future[0].ready) || waited >= READY_WAIT_MS) {
+          clearReadyWait();
+          goNext();
+        }
+      }, READY_POLL_MS);
+    }
+
+    function startAutoAdvance() {
+      clearAutoAdvance();
+      if (mode === 'sequence' && sequence.length <= 1) return;
+      if (mode === 'random' && catalog.length <= 1) return;
+      window._addressSlideshowTimer = setInterval(tickAdvance, durationMs);
     }
 
     function paintSlide(item) {
@@ -238,6 +293,7 @@
           img.src = window.pepeImagePlaceholder || '';
         }
       };
+      fillFuture();
     }
 
     function showSequenceSlide(i) {
@@ -246,7 +302,6 @@
       index = i;
       var a = sequence[index];
       paintSlide(makeSlideItem(a.name, a.imgUrl));
-      /* warm next in sequence */
       if (preloadCount > 0 && index + 1 < sequence.length) {
         makeSlideItem(sequence[index + 1].name, sequence[index + 1].imgUrl);
       }
@@ -272,7 +327,7 @@
         if (!future.length) {
           var name = pickRandomName(catalog, recentNames());
           if (!name) return;
-          future.push(makeSlideItem(name));
+          future.push(makeSlideItem(name, null, onPreloadReady));
         }
         if (current) past.push(current);
         if (past.length > 50) past.shift();
@@ -288,12 +343,12 @@
 
     function stopSlideshow() {
       clearFadeTimer();
+      clearAutoAdvance();
       var doc = document;
       if (doc.fullscreenElement || doc.webkitFullscreenElement) {
         (doc.exitFullscreen || doc.webkitExitFullscreen).call(doc).catch(function () {});
       }
       overlay.classList.remove('address-slideshow-active');
-      clearAutoAdvance();
       past = [];
       future = [];
       current = null;
