@@ -3,20 +3,47 @@
  * startSlideshow(assetList, options?)
  *   options.durationMs — default 21000 (sequence) or 15000 (random)
  *   options.mode — 'sequence' | 'random'
- *   options.preload — how many slides to warm ahead (random default 6)
- *   options.history — how many prior slides to keep ready for back (random default 6)
+ *   options.preload — how many slides to warm ahead (random default 3)
+ *   options.history — how many prior slides to keep ready for back (random default 3)
  *   options.catalog — name[] for random mode (or load via RandomPepeCore)
- * startRandomSlideshow() — full Rare Pepe catalog, 15s, 6 ahead + 6 behind
+ * startRandomSlideshow() — full Rare Pepe catalog, 15s, 3 ahead + 3 behind
+ *
+ * Auto-advance uses wall-clock setTimeout (not setInterval). Mobile Safari often
+ * freezes intervals until a touch after idle/background; we also resume on
+ * visibility/pageshow and hold a screen wake lock when available.
  */
 (function () {
   'use strict';
 
   var DEFAULT_SEQUENCE_MS = 21000;
   var DEFAULT_RANDOM_MS = 15000;
-  var DEFAULT_RANDOM_PRELOAD = 6;
-  var DEFAULT_RANDOM_HISTORY = 6;
+  /** Keep ahead/behind queues small — full GIF pepe frames OOM phones if we warm too many. */
+  var DEFAULT_RANDOM_PRELOAD = 3;
+  var DEFAULT_RANDOM_HISTORY = 3;
   var READY_WAIT_MS = 5000;
   var READY_POLL_MS = 200;
+
+  var screenWakeLock = null;
+
+  function releaseWakeLock() {
+    if (!screenWakeLock) return;
+    var lock = screenWakeLock;
+    screenWakeLock = null;
+    try {
+      lock.release();
+    } catch (e) { /* ignore */ }
+  }
+
+  function requestWakeLock() {
+    releaseWakeLock();
+    if (!navigator.wakeLock || typeof navigator.wakeLock.request !== 'function') return;
+    navigator.wakeLock.request('screen').then(function (lock) {
+      screenWakeLock = lock;
+      lock.addEventListener('release', function () {
+        if (screenWakeLock === lock) screenWakeLock = null;
+      });
+    }).catch(function () { /* unsupported / denied */ });
+  }
 
   /* Session memory: working image URLs so back/forward does not re-probe. Not the full ~1GB set. */
   var sessionUrlCache = Object.create(null);
@@ -199,8 +226,13 @@
     if (mode === 'random' && !catalog.length && !sequence.length) return;
 
     if (window._addressSlideshowTimer) {
+      clearTimeout(window._addressSlideshowTimer);
       clearInterval(window._addressSlideshowTimer);
       window._addressSlideshowTimer = null;
+    }
+    if (window._addressSlideshowReadyWait) {
+      clearInterval(window._addressSlideshowReadyWait);
+      window._addressSlideshowReadyWait = null;
     }
 
     var overlay = ensureOverlay();
@@ -210,6 +242,7 @@
     var index = 0;
     var fadeTimer = null;
     var readyWaitTimer = null;
+    var nextAdvanceAt = 0;
     var FADE_DELAY_MS = 3000;
 
     /* Random mode: past stack + current + future queue */
@@ -236,6 +269,7 @@
 
     function clearReadyWait() {
       if (readyWaitTimer) {
+        clearTimeout(readyWaitTimer);
         clearInterval(readyWaitTimer);
         readyWaitTimer = null;
       }
@@ -244,9 +278,11 @@
     function clearAutoAdvance() {
       clearReadyWait();
       if (window._addressSlideshowTimer) {
+        clearTimeout(window._addressSlideshowTimer);
         clearInterval(window._addressSlideshowTimer);
         window._addressSlideshowTimer = null;
       }
+      nextAdvanceAt = 0;
     }
 
     function recentNames() {
@@ -272,8 +308,12 @@
 
     /** Auto-advance: for random, wait briefly if the next image is still downloading. */
     function tickAdvance() {
+      window._addressSlideshowTimer = null;
+      nextAdvanceAt = 0;
+      if (!overlay.classList.contains('address-slideshow-active')) return;
       if (mode !== 'random') {
         showSequenceSlide((index + 1) % sequence.length);
+        startAutoAdvance();
         return;
       }
       fillFuture();
@@ -282,22 +322,63 @@
         return;
       }
       clearReadyWait();
-      var waited = 0;
-      readyWaitTimer = setInterval(function () {
-        waited += READY_POLL_MS;
+      var waitStarted = Date.now();
+      function pollReady() {
+        readyWaitTimer = null;
+        if (!overlay.classList.contains('address-slideshow-active')) return;
         fillFuture();
-        if ((future[0] && future[0].ready) || waited >= READY_WAIT_MS) {
-          clearReadyWait();
+        if ((future[0] && future[0].ready) || (Date.now() - waitStarted) >= READY_WAIT_MS) {
           goNext();
+          return;
         }
-      }, READY_POLL_MS);
+        readyWaitTimer = setTimeout(pollReady, READY_POLL_MS);
+      }
+      readyWaitTimer = setTimeout(pollReady, READY_POLL_MS);
     }
 
     function startAutoAdvance() {
       clearAutoAdvance();
+      if (!overlay.classList.contains('address-slideshow-active')) return;
       if (mode === 'sequence' && sequence.length <= 1) return;
       if (mode === 'random' && catalog.length <= 1) return;
-      window._addressSlideshowTimer = setInterval(tickAdvance, durationMs);
+      nextAdvanceAt = Date.now() + durationMs;
+      window._addressSlideshowTimer = setTimeout(tickAdvance, durationMs);
+    }
+
+    /**
+     * Safari/iOS often freezes timers until a touch after idle or background.
+     * Wall-clock catch-up: if overdue, advance now; else re-arm the remaining delay.
+     */
+    function resumeAutoAdvance() {
+      if (!overlay.classList.contains('address-slideshow-active')) return;
+      if (mode === 'sequence' && sequence.length <= 1) return;
+      if (mode === 'random' && catalog.length <= 1) return;
+      requestWakeLock();
+      /* Frozen ready-wait poll: finish the advance instead of sitting forever. */
+      if (readyWaitTimer) {
+        clearReadyWait();
+        goNext();
+        return;
+      }
+      if (!nextAdvanceAt) {
+        startAutoAdvance();
+        return;
+      }
+      var remaining = nextAdvanceAt - Date.now();
+      if (remaining <= 50) {
+        if (window._addressSlideshowTimer) {
+          clearTimeout(window._addressSlideshowTimer);
+          clearInterval(window._addressSlideshowTimer);
+          window._addressSlideshowTimer = null;
+        }
+        tickAdvance();
+        return;
+      }
+      if (window._addressSlideshowTimer) {
+        clearTimeout(window._addressSlideshowTimer);
+        clearInterval(window._addressSlideshowTimer);
+      }
+      window._addressSlideshowTimer = setTimeout(tickAdvance, remaining);
     }
 
     function trimFuture() {
@@ -380,7 +461,11 @@
         fillFuture();
         if (!future.length) {
           var name = pickRandomName(catalog, recentNames());
-          if (!name) return;
+          if (!name) {
+            /* Never leave the show without a reschedule — empty pick is transient. */
+            startAutoAdvance();
+            return;
+          }
           future.push(makeSlideItem(name, cachedUrl(name) || null, onPreloadReady));
         }
         if (current) {
@@ -392,7 +477,10 @@
         startAutoAdvance();
         return;
       }
-      if (index >= sequence.length - 1) return;
+      if (index >= sequence.length - 1) {
+        startAutoAdvance();
+        return;
+      }
       showSequenceSlide(index + 1);
       startAutoAdvance();
     }
@@ -400,6 +488,13 @@
     function stopSlideshow() {
       clearFadeTimer();
       clearAutoAdvance();
+      releaseWakeLock();
+      if (overlay._onVisResume) {
+        document.removeEventListener('visibilitychange', overlay._onVisResume);
+        window.removeEventListener('pageshow', overlay._onVisResume);
+        window.removeEventListener('focus', overlay._onVisResume);
+        overlay._onVisResume = null;
+      }
       var doc = document;
       if (doc.fullscreenElement || doc.webkitFullscreenElement) {
         (doc.exitFullscreen || doc.webkitExitFullscreen).call(doc).catch(function () {});
@@ -410,10 +505,24 @@
       current = null;
     }
 
+    function onVis() {
+      if (document.visibilityState && document.visibilityState !== 'visible') return;
+      resumeAutoAdvance();
+    }
+
+    /* Drop prior resume hooks if slideshow restarted without a clean stop. */
+    if (overlay._onVisResume) {
+      document.removeEventListener('visibilitychange', overlay._onVisResume);
+      window.removeEventListener('pageshow', overlay._onVisResume);
+      window.removeEventListener('focus', overlay._onVisResume);
+    }
+    overlay._onVisResume = onVis;
+
     overlay._showExit = showExit;
     overlay._stopSlideshow = stopSlideshow;
     overlay._goPrev = goPrev;
     overlay._goNext = goNext;
+    overlay._resumeAutoAdvance = resumeAutoAdvance;
 
     if (mode === 'random') {
       var firstName = sequence.length
@@ -429,6 +538,10 @@
     overlay.classList.add('address-slideshow-active');
     clearFadeTimer();
     scheduleFadeExit();
+    document.addEventListener('visibilitychange', onVis);
+    window.addEventListener('pageshow', onVis);
+    window.addEventListener('focus', onVis);
+    requestWakeLock();
     startAutoAdvance();
     if (overlay.requestFullscreen) {
       overlay.requestFullscreen().catch(function () {});
