@@ -22,7 +22,7 @@
     return window.rpwErrors;
   };
 
-  window.PEPE_IMAGE_EXTS = ['.gif', '.jpg', '.png'];
+  window.PEPE_IMAGE_EXTS = ['.jpg', '.png', '.gif'];
   var EXT_STORAGE_KEY = 'rpw-pepe-exts-v1';
 
   /* Single shared filler: 400×560 = official Rare Pepe card aspect ratio (same across site) */
@@ -147,11 +147,40 @@
     imgEl.src = window.pepeImageUrl(asset, order[idx]);
   };
 
-  /* Remember successful loads for any pepe img with data-asset (all pages). */
+  /**
+   * Re-kick pepe imgs that failed to decode (common after client nav / SW update).
+   * Safe to call after injecting card HTML or on pageshow.
+   */
+  window.repairPepeImages = function (root) {
+    var scope = root && root.querySelectorAll ? root : document;
+    var list = scope.querySelectorAll('img[data-asset]');
+    for (var i = 0; i < list.length; i++) {
+      var img = list[i];
+      var asset = img.getAttribute('data-asset');
+      if (!asset) continue;
+      var broken = !img.getAttribute('src') ||
+        (img.complete && img.naturalWidth === 0 && String(img.src).indexOf('data:') !== 0);
+      if (!broken) continue;
+      img.onerror = function () {
+        if (typeof window.tryNextPepeExt === 'function') window.tryNextPepeExt(this);
+      };
+      img.src = window.pepeImageUrlFirst(asset);
+    }
+  };
+
+  /* Remember successful loads; ignore "loads" that did not decode as an image. */
   document.addEventListener('load', function (e) {
     var t = e.target;
     if (!t || t.tagName !== 'IMG') return;
     if (!t.getAttribute('data-asset')) return;
+    if (t.naturalWidth === 0) {
+      if (typeof window.tryNextPepeExt === 'function') window.tryNextPepeExt(t);
+      return;
+    }
     window.rememberPepeImageExt(t);
   }, true);
+
+  window.addEventListener('pageshow', function () {
+    window.repairPepeImages(document);
+  });
 })();

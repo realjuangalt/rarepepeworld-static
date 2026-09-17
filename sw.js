@@ -4,7 +4,7 @@
  * Bump CACHE_VERSION when shipping breaking asset URL changes.
  */
 /* eslint-disable no-restricted-globals */
-var CACHE_VERSION = 'v4';
+var CACHE_VERSION = 'v5';
 var PEPE_CACHE = 'rpw-pepes-' + CACHE_VERSION;
 var DATA_CACHE = 'rpw-data-' + CACHE_VERSION;
 var STATIC_CACHE = 'rpw-static-' + CACHE_VERSION;
@@ -39,6 +39,12 @@ function isStaticAsset(pathname) {
   );
 }
 
+function isRealImageResponse(response) {
+  if (!response || !response.ok) return false;
+  var ct = (response.headers.get('content-type') || '').toLowerCase();
+  return ct.indexOf('image/') === 0;
+}
+
 function cachePutOk(cacheName, request, response) {
   if (!response || !response.ok) return response;
   var copy = response.clone();
@@ -48,15 +54,28 @@ function cachePutOk(cacheName, request, response) {
   return response;
 }
 
-function cacheFirst(cacheName, request) {
-  return caches.open(cacheName).then(function (cache) {
-    return cache.match(request).then(function (cached) {
-      if (cached) return cached;
-      return fetch(request).then(function (response) {
-        return cachePutOk(cacheName, request, response);
+function cachePutImage(cacheName, request, response) {
+  if (!isRealImageResponse(response)) return response;
+  return cachePutOk(cacheName, request, response);
+}
+
+/**
+ * Pepe images: network-first, then cache.
+ * Avoids stuck blank cards after nav when a probe/.gif 404 raced the SW.
+ * Never cache GitHub HTML 404 bodies as "images".
+ */
+function networkFirstImage(cacheName, request) {
+  return fetch(request)
+    .then(function (response) {
+      return cachePutImage(cacheName, request, response);
+    })
+    .catch(function () {
+      return caches.open(cacheName).then(function (cache) {
+        return cache.match(request).then(function (cached) {
+          return cached || Response.error();
+        });
       });
     });
-  });
 }
 
 function staleWhileRevalidate(cacheName, request) {
@@ -72,7 +91,7 @@ function staleWhileRevalidate(cacheName, request) {
   });
 }
 
-self.addEventListener('install', function (event) {
+self.addEventListener('install', function () {
   self.skipWaiting();
 });
 
@@ -105,7 +124,7 @@ self.addEventListener('fetch', function (event) {
   }
 
   if (isPepeImage(pathname)) {
-    event.respondWith(cacheFirst(PEPE_CACHE, request));
+    event.respondWith(networkFirstImage(PEPE_CACHE, request));
     return;
   }
   if (isDataJson(pathname)) {

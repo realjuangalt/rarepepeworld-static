@@ -124,6 +124,11 @@
         featuredRow.innerHTML = featured.map(function (a) { return renderFeaturedCard(a, links); }).join('');
       }
 
+      if (typeof window.repairPepeImages === 'function') {
+        window.repairPepeImages(document);
+        setTimeout(function () { window.repairPepeImages(document); }, 400);
+      }
+
       var randomSlideshowBtn = document.getElementById('random-slideshow-btn');
       if (randomSlideshowBtn) {
         randomSlideshowBtn.addEventListener('click', function () {

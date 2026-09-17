@@ -68,9 +68,12 @@
     }
     var frontImg = cardEl.querySelector('.pepe-card-front img.card-image');
     if (frontImg) {
-      frontImg.src = imgUrl;
-      frontImg.dataset.asset = name;
+      frontImg.setAttribute('data-asset', name);
       frontImg.alt = name;
+      frontImg.onerror = function () {
+        if (typeof window.tryNextPepeExt === 'function') window.tryNextPepeExt(frontImg);
+      };
+      frontImg.src = imgUrl;
     }
     var frontLink = cardEl.querySelector('.pepe-card-front a');
     if (frontLink) frontLink.href = href;
@@ -141,6 +144,9 @@
       function applyInstant() {
         for (var i = 0; i < cards.length && i < cardData.length; i++) {
           updateOneCardContent(cards[i], cardData[i].asset, cardData[i].capStr);
+        }
+        if (typeof window.repairPepeImages === 'function') {
+          window.repairPepeImages(randomRowEl);
         }
       }
 
